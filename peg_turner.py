@@ -68,11 +68,16 @@ for i in range(NUM_SCALLOPS):
     )
     turner = turner - scallop
 
-# Chamfer the sharp edges left by the scallop cuts
-scallop_edges = turner.edges().filter_by(GeomType.LINE, reverse=True).filter_by(
+# Chamfer all sharp edges left by the scallop cuts (both vertical curves and
+# edges where scallops meet the top/bottom faces)
+inner_radius_sq = (OUTER_RADIUS - SCALLOP_DEPTH) ** 2
+outer_radius_sq = OUTER_RADIUS**2
+scallop_edges = turner.edges().filter_by(
     lambda e: (
-        abs(e.center().X**2 + e.center().Y**2 - (OUTER_RADIUS - SCALLOP_DEPTH / 2)**2)
-        < (SCALLOP_DEPTH * OUTER_RADIUS)
+        inner_radius_sq * 0.9
+        < (e.center().X**2 + e.center().Y**2)
+        < outer_radius_sq * 1.1
+        and e.center().Z >= -0.01  # exclude any internal edges
     )
 )
 if scallop_edges:
