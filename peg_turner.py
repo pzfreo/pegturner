@@ -22,9 +22,13 @@ TOLERANCE = 0.4  # mm per side for ABS
 SLOT_LENGTH = PEG_HEAD_DIAMETER + TOLERANCE  # 28.4 mm
 SLOT_WIDTH = PEG_HEAD_THICKNESS + TOLERANCE  # 10.4 mm
 
+# Slot corner rounding
+SLOT_CORNER_RADIUS = min(SLOT_WIDTH, SLOT_LENGTH) / 2 - 0.01  # fully rounded ends (stadium shape)
+
 # Scallops
 NUM_SCALLOPS = 12
 SCALLOP_DEPTH = 4.0  # mm
+SCALLOP_CHAMFER = 0.8  # mm chamfer on scallop edges
 
 # === Build the peg turner ===
 
@@ -35,15 +39,13 @@ outer = Cylinder(
     align=(Align.CENTER, Align.CENTER, Align.MIN),
 )
 
-# Create the internal slot cavity (open from the top, closed at bottom with end cap)
-slot = Box(
-    length=SLOT_LENGTH,
-    width=SLOT_WIDTH,
-    height=INTERNAL_DEPTH + 1,  # +1 to cleanly cut through the open end
-    align=(Align.CENTER, Align.CENTER, Align.MIN),
+# Create the internal slot cavity with rounded corners (open from the top, closed at bottom)
+slot_profile = RectangleRounded(
+    width=SLOT_LENGTH,
+    height=SLOT_WIDTH,
+    radius=SLOT_CORNER_RADIUS,
 )
-# Position slot so its bottom sits at the end cap height
-slot = Pos(0, 0, END_CAP_THICKNESS) * slot
+slot = Pos(0, 0, END_CAP_THICKNESS) * extrude(slot_profile, INTERNAL_DEPTH + 1)
 
 # Subtract the slot from the cylinder
 turner = outer - slot
@@ -65,6 +67,16 @@ for i in range(NUM_SCALLOPS):
         align=(Align.CENTER, Align.CENTER, Align.MIN),
     )
     turner = turner - scallop
+
+# Chamfer the sharp edges left by the scallop cuts
+scallop_edges = turner.edges().filter_by(GeomType.LINE, reverse=True).filter_by(
+    lambda e: (
+        abs(e.center().X**2 + e.center().Y**2 - (OUTER_RADIUS - SCALLOP_DEPTH / 2)**2)
+        < (SCALLOP_DEPTH * OUTER_RADIUS)
+    )
+)
+if scallop_edges:
+    turner = chamfer(scallop_edges, SCALLOP_CHAMFER)
 
 # === Export ===
 
