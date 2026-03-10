@@ -11,6 +11,7 @@ filaments = ["Generic ABS @base", "Generic ASA @base", "Generic ABS @base"]  # A
 [slicer.overrides]
 curr_bed_type = "Textured PEI Plate"
 sparse_infill_density = "100%"
+sparse_infill_pattern = "rectilinear"
 brim_type = "outer_only"
 brim_width = "5"
 
