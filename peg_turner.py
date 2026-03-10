@@ -36,14 +36,15 @@ TOTAL_HEIGHT = PEG_HEAD_DEPTH + CAP_HEIGHT  # 35 mm
 # Slot corner rounding
 SLOT_CORNER_RADIUS = min(SLOT_WIDTH, SLOT_LENGTH) / 2 - 0.01  # fully rounded ends (stadium shape)
 
-# Fillets at stalk-cap junction
+# Fillets
 EXTERIOR_FILLET = 2.0  # mm fillet on exterior stalk-to-cap step
 INTERIOR_FILLET = 2.0  # mm fillet on interior slot ceiling
+STALK_BASE_FILLET = 1.0  # mm fillet on bottom corners of stalk
 
 # Scallops (on cap only)
 NUM_SCALLOPS = 12
 SCALLOP_DEPTH = 4.0  # mm
-SCALLOP_FILLET = 0.8  # mm fillet on scallop edges
+SCALLOP_FILLET = 2.0  # mm fillet on scallop edges (matches exterior fillet)
 
 # === Build the peg turner ===
 
@@ -74,6 +75,16 @@ exterior_junction_edges = turner.edges().filter_by(
 )
 if exterior_junction_edges:
     turner = fillet(exterior_junction_edges, EXTERIOR_FILLET)
+
+# Fillet the bottom corners of the stalk
+stalk_base_edges = turner.edges().filter_by(
+    lambda e: (
+        abs(e.center().Z) < 0.01
+        and (e.center().X**2 + e.center().Y**2) > (min(STALK_LENGTH, STALK_WIDTH) / 2 - 1) ** 2
+    )
+)
+if stalk_base_edges:
+    turner = fillet(stalk_base_edges, STALK_BASE_FILLET)
 
 # Create the internal slot cavity with rounded corners (open from the bottom)
 slot_profile = RectangleRounded(
@@ -149,6 +160,7 @@ print(f"  Scallops:            {NUM_SCALLOPS} × {SCALLOP_DEPTH} mm deep")
 print(f"  Scallop fillet:      {SCALLOP_FILLET} mm")
 print(f"  Exterior fillet:     {EXTERIOR_FILLET} mm")
 print(f"  Interior fillet:     {INTERIOR_FILLET} mm")
+print(f"  Stalk base fillet:   {STALK_BASE_FILLET} mm")
 print(f"  Bounding box:        {bb.max.X - bb.min.X:.1f} × {bb.max.Y - bb.min.Y:.1f} × {bb.max.Z - bb.min.Z:.1f} mm")
 
 # === Export ===
