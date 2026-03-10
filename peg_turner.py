@@ -10,24 +10,26 @@ from build123d import *
 
 # === Parameters ===
 
-# Stalk (narrow section with slot)
-STALK_DIAMETER = 35.0  # mm
-STALK_RADIUS = STALK_DIAMETER / 2
-STALK_HEIGHT = 25.0  # mm
-
-# Cap (wide grip section)
-CAP_DIAMETER = 45.0  # mm
-CAP_RADIUS = CAP_DIAMETER / 2
-CAP_HEIGHT = 10.0  # mm
-
-TOTAL_HEIGHT = STALK_HEIGHT + CAP_HEIGHT  # 35 mm
-
-# Internal slot (peg head socket, in stalk only)
-PEG_HEAD_DIAMETER = 28.0  # mm
-PEG_HEAD_THICKNESS = 10.0  # mm
+# Internal slot (peg head socket)
+PEG_HEAD_DIAMETER = 31.0  # mm
+PEG_HEAD_THICKNESS = 15.0  # mm
 TOLERANCE = 0.4  # mm per side for ABS
 SLOT_LENGTH = PEG_HEAD_DIAMETER + TOLERANCE  # 28.4 mm
 SLOT_WIDTH = PEG_HEAD_THICKNESS + TOLERANCE  # 10.4 mm
+
+# Stalk (narrow section with slot)
+WALL_THICKNESS = 3.0  # mm
+STALK_DIAMETER = PEG_HEAD_DIAMETER + TOLERANCE + 2 * WALL_THICKNESS  # derived
+STALK_RADIUS = STALK_DIAMETER / 2
+PEG_HEAD_DEPTH = 25.0  # mm
+
+# Cap (wide grip section)
+CAP_EXTRA_DIAMETER = 10.6  # mm extra beyond stalk diameter
+CAP_DIAMETER = STALK_DIAMETER + CAP_EXTRA_DIAMETER  # derived (45 mm)
+CAP_RADIUS = CAP_DIAMETER / 2
+CAP_HEIGHT = 10.0  # mm
+
+TOTAL_HEIGHT = PEG_HEAD_DEPTH + CAP_HEIGHT  # 35 mm
 
 # Slot corner rounding
 SLOT_CORNER_RADIUS = min(SLOT_WIDTH, SLOT_LENGTH) / 2 - 0.01  # fully rounded ends (stadium shape)
@@ -42,12 +44,12 @@ SCALLOP_CHAMFER = 0.8  # mm chamfer on scallop edges
 # Stalk: narrow cylinder, open at bottom
 stalk = Cylinder(
     radius=STALK_RADIUS,
-    height=STALK_HEIGHT,
+    height=PEG_HEAD_DEPTH,
     align=(Align.CENTER, Align.CENTER, Align.MIN),
 )
 
 # Cap: solid wide cylinder sitting on top of stalk
-cap = Pos(0, 0, STALK_HEIGHT) * Cylinder(
+cap = Pos(0, 0, PEG_HEAD_DEPTH) * Cylinder(
     radius=CAP_RADIUS,
     height=CAP_HEIGHT,
     align=(Align.CENTER, Align.CENTER, Align.MIN),
@@ -62,7 +64,7 @@ slot_profile = RectangleRounded(
     height=SLOT_WIDTH,
     radius=SLOT_CORNER_RADIUS,
 )
-slot = Pos(0, 0, -1) * extrude(slot_profile, STALK_HEIGHT + 1)  # extend below to cut cleanly
+slot = Pos(0, 0, -1) * extrude(slot_profile, PEG_HEAD_DEPTH + 1)  # extend below to cut cleanly
 
 # Subtract the slot from the turner
 turner = turner - slot
@@ -77,7 +79,7 @@ for i in range(NUM_SCALLOPS):
     cx = scallop_center_radius * math.cos(angle_rad)
     cy = scallop_center_radius * math.sin(angle_rad)
 
-    scallop = Pos(cx, cy, STALK_HEIGHT) * Cylinder(
+    scallop = Pos(cx, cy, PEG_HEAD_DEPTH) * Cylinder(
         radius=scallop_circle_radius,
         height=CAP_HEIGHT,
         align=(Align.CENTER, Align.CENTER, Align.MIN),
@@ -92,11 +94,29 @@ scallop_edges = turner.edges().filter_by(
         inner_radius_sq * 0.9
         < (e.center().X**2 + e.center().Y**2)
         < outer_radius_sq * 1.1
-        and e.center().Z >= STALK_HEIGHT - 0.01
+        and e.center().Z >= PEG_HEAD_DEPTH - 0.01
     )
 )
 if scallop_edges:
     turner = chamfer(scallop_edges, SCALLOP_CHAMFER)
+
+# === Print dimensions ===
+
+bb = turner.bounding_box()
+print("=== Peg Turner Dimensions ===")
+print(f"  Peg head diameter:   {PEG_HEAD_DIAMETER} mm")
+print(f"  Peg head thickness:  {PEG_HEAD_THICKNESS} mm")
+print(f"  Peg head depth:      {PEG_HEAD_DEPTH} mm")
+print(f"  Tolerance:           {TOLERANCE} mm")
+print(f"  Slot (L × W):        {SLOT_LENGTH:.1f} × {SLOT_WIDTH:.1f} mm")
+print(f"  Wall thickness:      {WALL_THICKNESS} mm")
+print(f"  Stalk diameter:      {STALK_DIAMETER:.1f} mm")
+print(f"  Cap diameter:        {CAP_DIAMETER:.1f} mm")
+print(f"  Cap height:          {CAP_HEIGHT} mm")
+print(f"  Total height:        {TOTAL_HEIGHT:.1f} mm")
+print(f"  Scallops:            {NUM_SCALLOPS} × {SCALLOP_DEPTH} mm deep")
+print(f"  Scallop chamfer:     {SCALLOP_CHAMFER} mm")
+print(f"  Bounding box:        {bb.max.X - bb.min.X:.1f} × {bb.max.Y - bb.min.Y:.1f} × {bb.max.Z - bb.min.Z:.1f} mm")
 
 # === Export ===
 
