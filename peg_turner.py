@@ -106,9 +106,9 @@ for i in range(NUM_SCALLOPS):
     cx = scallop_center_radius * math.cos(angle_rad)
     cy = scallop_center_radius * math.sin(angle_rad)
 
-    scallop = Pos(cx, cy, PEG_HEAD_DEPTH) * Cylinder(
+    scallop = Pos(cx, cy, PEG_HEAD_DEPTH - 1) * Cylinder(
         radius=scallop_circle_radius,
-        height=CAP_HEIGHT,
+        height=CAP_HEIGHT + 2,
         align=(Align.CENTER, Align.CENTER, Align.MIN),
     )
     turner = turner - scallop
@@ -127,6 +127,21 @@ top_scallop_edges = turner.edges().filter_by(
 )
 if top_scallop_edges:
     turner = chamfer(top_scallop_edges, SCALLOP_CHAMFER)
+
+# Chamfer vertical scallop edges (only edges long enough to chamfer)
+min_edge_length = CAP_HEIGHT * 0.5  # only chamfer edges at least half the cap height
+vertical_scallop_edges = turner.edges().filter_by(
+    lambda e: (
+        inner_radius_sq * 0.9
+        < (e.center().X**2 + e.center().Y**2)
+        < outer_radius_sq * 1.1
+        and e.center().Z > PEG_HEAD_DEPTH + 0.5
+        and e.center().Z < cap_top - 0.5
+        and e.length > min_edge_length
+    )
+)
+if vertical_scallop_edges:
+    turner = chamfer(vertical_scallop_edges, SCALLOP_CHAMFER)
 
 # === Print dimensions ===
 
