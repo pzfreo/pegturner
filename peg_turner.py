@@ -17,15 +17,17 @@ TOLERANCE = 0.4  # mm per side for ABS
 SLOT_LENGTH = PEG_HEAD_DIAMETER + TOLERANCE  # 28.4 mm
 SLOT_WIDTH = PEG_HEAD_THICKNESS + TOLERANCE  # 10.4 mm
 
-# Stalk (narrow section with slot)
-WALL_THICKNESS = 3.0  # mm
-STALK_DIAMETER = PEG_HEAD_DIAMETER + TOLERANCE + 2 * WALL_THICKNESS  # derived
-STALK_RADIUS = STALK_DIAMETER / 2
+# Stalk (narrow section with slot, stadium shape)
+END_WALL_THICKNESS = 3.0  # mm (wall at ends of slot, along length axis)
+SIDE_WALL_THICKNESS = 2 * END_WALL_THICKNESS  # mm (wall at sides of slot, along width axis)
+STALK_LENGTH = SLOT_LENGTH + 2 * END_WALL_THICKNESS  # derived (outer stadium length)
+STALK_WIDTH = SLOT_WIDTH + 2 * SIDE_WALL_THICKNESS  # derived (outer stadium width)
+STALK_CORNER_RADIUS = min(STALK_WIDTH, STALK_LENGTH) / 2 - 0.01  # fully rounded ends
 PEG_HEAD_DEPTH = 25.0  # mm
 
 # Cap (wide grip section)
-CAP_EXTRA_DIAMETER = 10.6  # mm extra beyond stalk diameter
-CAP_DIAMETER = STALK_DIAMETER + CAP_EXTRA_DIAMETER  # derived (45 mm)
+CAP_EXTRA_DIAMETER = 10.6  # mm extra beyond stalk max dimension
+CAP_DIAMETER = max(STALK_LENGTH, STALK_WIDTH) + CAP_EXTRA_DIAMETER  # derived
 CAP_RADIUS = CAP_DIAMETER / 2
 CAP_HEIGHT = 10.0  # mm
 
@@ -41,12 +43,13 @@ SCALLOP_CHAMFER = 0.8  # mm chamfer on scallop edges
 
 # === Build the peg turner ===
 
-# Stalk: narrow cylinder, open at bottom
-stalk = Cylinder(
-    radius=STALK_RADIUS,
-    height=PEG_HEAD_DEPTH,
-    align=(Align.CENTER, Align.CENTER, Align.MIN),
+# Stalk: stadium-shaped extrusion, open at bottom
+stalk_profile = RectangleRounded(
+    width=STALK_LENGTH,
+    height=STALK_WIDTH,
+    radius=STALK_CORNER_RADIUS,
 )
+stalk = extrude(stalk_profile, PEG_HEAD_DEPTH)
 
 # Cap: solid wide cylinder sitting on top of stalk
 cap = Pos(0, 0, PEG_HEAD_DEPTH) * Cylinder(
@@ -109,8 +112,9 @@ print(f"  Peg head thickness:  {PEG_HEAD_THICKNESS} mm")
 print(f"  Peg head depth:      {PEG_HEAD_DEPTH} mm")
 print(f"  Tolerance:           {TOLERANCE} mm")
 print(f"  Slot (L × W):        {SLOT_LENGTH:.1f} × {SLOT_WIDTH:.1f} mm")
-print(f"  Wall thickness:      {WALL_THICKNESS} mm")
-print(f"  Stalk diameter:      {STALK_DIAMETER:.1f} mm")
+print(f"  End wall thickness:  {END_WALL_THICKNESS} mm")
+print(f"  Side wall thickness: {SIDE_WALL_THICKNESS} mm")
+print(f"  Stalk (L × W):      {STALK_LENGTH:.1f} × {STALK_WIDTH:.1f} mm")
 print(f"  Cap diameter:        {CAP_DIAMETER:.1f} mm")
 print(f"  Cap height:          {CAP_HEIGHT} mm")
 print(f"  Total height:        {TOTAL_HEIGHT:.1f} mm")
