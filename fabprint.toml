@@ -24,4 +24,5 @@ serial = "01P00A451601106"
 file = "peg_turner.step"
 copies = 1
 orient = "upright"
+rotate = [180, 0, 0]
 filament = 2
