@@ -15,7 +15,9 @@ brim_type = "outer_only"
 brim_width = "5"
 
 [printer]
-mode = "bambu-connect"
+mode = "cloud-bridge"
+serial = "01P00A451601106"
+
 
 [[parts]]
 file = "peg_turner.step"
