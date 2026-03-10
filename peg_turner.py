@@ -36,6 +36,10 @@ TOTAL_HEIGHT = PEG_HEAD_DEPTH + CAP_HEIGHT  # 35 mm
 # Slot corner rounding
 SLOT_CORNER_RADIUS = min(SLOT_WIDTH, SLOT_LENGTH) / 2 - 0.01  # fully rounded ends (stadium shape)
 
+# Fillets at stalk-cap junction
+EXTERIOR_FILLET = 2.0  # mm fillet on exterior stalk-to-cap step
+INTERIOR_FILLET = 2.0  # mm fillet on interior slot ceiling
+
 # Scallops (on cap only)
 NUM_SCALLOPS = 12
 SCALLOP_DEPTH = 4.0  # mm
@@ -61,6 +65,16 @@ cap = Pos(0, 0, PEG_HEAD_DEPTH) * Cylinder(
 # Combine stalk and cap
 turner = stalk + cap
 
+# Fillet the exterior stalk-to-cap junction (on clean geometry, before cuts)
+exterior_junction_edges = turner.edges().filter_by(
+    lambda e: (
+        abs(e.center().Z - PEG_HEAD_DEPTH) < 0.01
+        and (e.center().X**2 + e.center().Y**2) > (min(STALK_LENGTH, STALK_WIDTH) / 2) ** 2 * 0.9
+    )
+)
+if exterior_junction_edges:
+    turner = fillet(exterior_junction_edges, EXTERIOR_FILLET)
+
 # Create the internal slot cavity with rounded corners (open from the bottom)
 slot_profile = RectangleRounded(
     width=SLOT_LENGTH,
@@ -71,6 +85,16 @@ slot = Pos(0, 0, -1) * extrude(slot_profile, PEG_HEAD_DEPTH + 1)  # extend below
 
 # Subtract the slot from the turner
 turner = turner - slot
+
+# Fillet the interior slot ceiling (where slot meets solid cap)
+interior_ceiling_edges = turner.edges().filter_by(
+    lambda e: (
+        abs(e.center().Z - PEG_HEAD_DEPTH) < 0.5
+        and (e.center().X**2 + e.center().Y**2) < (SLOT_LENGTH / 2) ** 2
+    )
+)
+if interior_ceiling_edges:
+    turner = fillet(interior_ceiling_edges, INTERIOR_FILLET)
 
 # Create scallops on the cap only
 scallop_center_radius = CAP_RADIUS
@@ -89,19 +113,20 @@ for i in range(NUM_SCALLOPS):
     )
     turner = turner - scallop
 
-# Chamfer all sharp edges left by the scallop cuts
+# Chamfer scallop edges on the top face of the cap
+cap_top = PEG_HEAD_DEPTH + CAP_HEIGHT
 inner_radius_sq = (CAP_RADIUS - SCALLOP_DEPTH) ** 2
 outer_radius_sq = CAP_RADIUS**2
-scallop_edges = turner.edges().filter_by(
+top_scallop_edges = turner.edges().filter_by(
     lambda e: (
         inner_radius_sq * 0.9
         < (e.center().X**2 + e.center().Y**2)
         < outer_radius_sq * 1.1
-        and e.center().Z >= PEG_HEAD_DEPTH - 0.01
+        and abs(e.center().Z - cap_top) < 0.5
     )
 )
-if scallop_edges:
-    turner = chamfer(scallop_edges, SCALLOP_CHAMFER)
+if top_scallop_edges:
+    turner = chamfer(top_scallop_edges, SCALLOP_CHAMFER)
 
 # === Print dimensions ===
 
@@ -120,6 +145,8 @@ print(f"  Cap height:          {CAP_HEIGHT} mm")
 print(f"  Total height:        {TOTAL_HEIGHT:.1f} mm")
 print(f"  Scallops:            {NUM_SCALLOPS} × {SCALLOP_DEPTH} mm deep")
 print(f"  Scallop chamfer:     {SCALLOP_CHAMFER} mm")
+print(f"  Exterior fillet:     {EXTERIOR_FILLET} mm")
+print(f"  Interior fillet:     {INTERIOR_FILLET} mm")
 print(f"  Bounding box:        {bb.max.X - bb.min.X:.1f} × {bb.max.Y - bb.min.Y:.1f} × {bb.max.Z - bb.min.Z:.1f} mm")
 
 # === Export ===
