@@ -97,6 +97,16 @@ slot = Pos(0, 0, -1) * extrude(slot_profile, PEG_HEAD_DEPTH + 1)  # extend below
 # Subtract the slot from the turner
 turner = turner - slot
 
+# Fillet the interior slot base (where slot meets stalk bottom opening)
+slot_base_edges = turner.edges().filter_by(
+    lambda e: (
+        abs(e.center().Z) < 0.5
+        and (e.center().X**2 + e.center().Y**2) < (SLOT_LENGTH / 2) ** 2
+    )
+)
+if slot_base_edges:
+    turner = fillet(slot_base_edges, STALK_BASE_FILLET)
+
 # Fillet the interior slot ceiling (where slot meets solid cap)
 interior_ceiling_edges = turner.edges().filter_by(
     lambda e: (
