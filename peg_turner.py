@@ -43,7 +43,7 @@ INTERIOR_FILLET = 2.0  # mm fillet on interior slot ceiling
 # Scallops (on cap only)
 NUM_SCALLOPS = 12
 SCALLOP_DEPTH = 4.0  # mm
-SCALLOP_CHAMFER = 0.8  # mm chamfer on scallop edges
+SCALLOP_FILLET = 0.8  # mm fillet on scallop edges
 
 # === Build the peg turner ===
 
@@ -113,35 +113,22 @@ for i in range(NUM_SCALLOPS):
     )
     turner = turner - scallop
 
-# Chamfer scallop edges on the top face of the cap
+# Fillet all scallop edges (top face and vertical edges in one pass)
 cap_top = PEG_HEAD_DEPTH + CAP_HEIGHT
 inner_radius_sq = (CAP_RADIUS - SCALLOP_DEPTH) ** 2
 outer_radius_sq = CAP_RADIUS**2
-top_scallop_edges = turner.edges().filter_by(
-    lambda e: (
-        inner_radius_sq * 0.9
-        < (e.center().X**2 + e.center().Y**2)
-        < outer_radius_sq * 1.1
-        and abs(e.center().Z - cap_top) < 0.5
-    )
-)
-if top_scallop_edges:
-    turner = chamfer(top_scallop_edges, SCALLOP_CHAMFER)
-
-# Chamfer vertical scallop edges (only edges long enough to chamfer)
-min_edge_length = CAP_HEIGHT * 0.5  # only chamfer edges at least half the cap height
-vertical_scallop_edges = turner.edges().filter_by(
+min_edge_length = CAP_HEIGHT * 0.3
+all_scallop_edges = turner.edges().filter_by(
     lambda e: (
         inner_radius_sq * 0.9
         < (e.center().X**2 + e.center().Y**2)
         < outer_radius_sq * 1.1
         and e.center().Z > PEG_HEAD_DEPTH + 0.5
-        and e.center().Z < cap_top - 0.5
         and e.length > min_edge_length
     )
 )
-if vertical_scallop_edges:
-    turner = chamfer(vertical_scallop_edges, SCALLOP_CHAMFER)
+if all_scallop_edges:
+    turner = fillet(all_scallop_edges, SCALLOP_FILLET)
 
 # === Print dimensions ===
 
@@ -159,7 +146,7 @@ print(f"  Cap diameter:        {CAP_DIAMETER:.1f} mm")
 print(f"  Cap height:          {CAP_HEIGHT} mm")
 print(f"  Total height:        {TOTAL_HEIGHT:.1f} mm")
 print(f"  Scallops:            {NUM_SCALLOPS} × {SCALLOP_DEPTH} mm deep")
-print(f"  Scallop chamfer:     {SCALLOP_CHAMFER} mm")
+print(f"  Scallop fillet:      {SCALLOP_FILLET} mm")
 print(f"  Exterior fillet:     {EXTERIOR_FILLET} mm")
 print(f"  Interior fillet:     {INTERIOR_FILLET} mm")
 print(f"  Bounding box:        {bb.max.X - bb.min.X:.1f} × {bb.max.Y - bb.min.Y:.1f} × {bb.max.Z - bb.min.Z:.1f} mm")
