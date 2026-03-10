@@ -46,6 +46,12 @@ NUM_SCALLOPS = 12
 SCALLOP_DEPTH = 4.0  # mm
 SCALLOP_FILLET = 2.0  # mm fillet on scallop edges (matches exterior fillet)
 
+# Text emboss (recessed into top face of cap)
+TEXT_STRING = "Chelli"
+TEXT_FONT = "MrsSaintDelafield-Regular.ttf"
+TEXT_DEPTH = 0.6  # mm recess depth
+TEXT_SIZE = 10.0  # mm font size
+
 # === Build the peg turner ===
 
 # Stalk: stadium-shaped extrusion, open at bottom
@@ -150,6 +156,19 @@ all_scallop_edges = turner.edges().filter_by(
 )
 if all_scallop_edges:
     turner = fillet(all_scallop_edges, SCALLOP_FILLET)
+
+# Recess "Chelli" into the top face of the cap
+text_face = turner.faces().filter_by(
+    lambda f: abs(f.center().Z - cap_top) < 0.5
+).first
+text_sketch = Text(
+    TEXT_STRING,
+    font_size=TEXT_SIZE,
+    font_path=TEXT_FONT,
+    align=(Align.CENTER, Align.CENTER),
+)
+text_solid = Pos(0, 0, cap_top) * extrude(text_sketch, -TEXT_DEPTH)
+turner = turner - text_solid
 
 # === Print dimensions ===
 
