@@ -50,7 +50,7 @@ SCALLOP_FILLET = 2.0  # mm fillet on scallop edges (matches exterior fillet)
 TEXT_STRING = "Chelli"
 TEXT_FONT = "MrsSaintDelafield-Regular.ttf"
 TEXT_DEPTH = 0.6  # mm recess depth
-TEXT_SIZE = 10.0  # mm font size
+TEXT_FILL_RATIO = 0.75  # fraction of cap diameter the text should fill
 
 # === Build the peg turner ===
 
@@ -158,13 +158,24 @@ if all_scallop_edges:
     turner = fillet(all_scallop_edges, SCALLOP_FILLET)
 
 # Recess "Chelli" into the top face of the cap
-text_face = turner.faces().filter_by(
-    lambda f: abs(f.center().Z - cap_top) < 0.5
-).first
+# Auto-scale font size so text fills TEXT_FILL_RATIO of the cap diameter
+_test_size = 10.0
+_test_text = Text(
+    TEXT_STRING,
+    font_size=_test_size,
+    font_path=TEXT_FONT,
+    font_style=FontStyle.BOLD,
+    align=(Align.CENTER, Align.CENTER),
+)
+_test_bb = _test_text.bounding_box()
+_test_width = _test_bb.max.X - _test_bb.min.X
+TEXT_SIZE = _test_size * (CAP_DIAMETER * TEXT_FILL_RATIO) / _test_width
+
 text_sketch = Text(
     TEXT_STRING,
     font_size=TEXT_SIZE,
     font_path=TEXT_FONT,
+    font_style=FontStyle.BOLD,
     align=(Align.CENTER, Align.CENTER),
 )
 text_solid = Pos(0, 0, cap_top) * extrude(text_sketch, -TEXT_DEPTH)
@@ -190,6 +201,7 @@ print(f"  Scallop fillet:      {SCALLOP_FILLET} mm")
 print(f"  Exterior fillet:     {EXTERIOR_FILLET} mm")
 print(f"  Interior fillet:     {INTERIOR_FILLET} mm")
 print(f"  Stalk base fillet:   {STALK_BASE_FILLET} mm")
+print(f"  Text size (auto):    {TEXT_SIZE:.1f} mm")
 print(f"  Bounding box:        {bb.max.X - bb.min.X:.1f} × {bb.max.Y - bb.min.Y:.1f} × {bb.max.Z - bb.min.Z:.1f} mm")
 
 # === Export ===
