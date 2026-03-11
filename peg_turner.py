@@ -291,7 +291,7 @@ if args.tpu_insert:
 
 # === Export ===
 
-STEP_FILE = "peg_turner.step"
+STEP_FILE = "peg_turner_wi.step" if args.tpu_insert else "peg_turner.step"
 export_step(turner, STEP_FILE)
 print(f"\nExported STEP file: {STEP_FILE}")
 
