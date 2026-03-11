@@ -1,0 +1,194 @@
+DEBUG: monkey-patching `Vector.add` and `Vector.sub`
+INFO: Loading STEP file via build123d: /Users/paul/repos/pegturner/peg_turner.step
+DEBUG: Adding children COMPOUND to 
+DEBUG: face_normals didn't match triangles, ignoring!
+INFO: Packed 1 parts onto plate
+INFO: Injected per-object extruder metadata into plate.3mf
+INFO: Exported plate to plate.3mf
+DEBUG: Resolved 'Bambu Lab P1S 0.4 nozzle' from system profiles: /Users/paul/Library/Application Support/OrcaSlicer/system/BBL/machine/Bambu Lab P1S 0.4 nozzle.json
+DEBUG: Resolved '0.20mm Standard @BBL X1C' from system profiles: /Users/paul/Library/Application Support/OrcaSlicer/system/BBL/process/0.20mm Standard @BBL X1C.json
+INFO: Applied 5 override(s) to 0.20mm Standard @BBL X1C:
+  curr_bed_type: <unset> → Textured PEI Plate
+  sparse_infill_density: 15% → 100%
+  sparse_infill_pattern: crosshatch → rectilinear
+  brim_type: <unset> → outer_only
+  brim_width: 5 → 5
+DEBUG: Resolved 'Generic ABS @base' from system profiles: /Users/paul/Library/Application Support/OrcaSlicer/system/BBL/filament/Generic ABS @base.json
+DEBUG: Resolved 'Generic ASA @base' from system profiles: /Users/paul/Library/Application Support/OrcaSlicer/system/BBL/filament/Generic ASA @base.json
+DEBUG: Resolved 'Generic PETG-CF @base' from system profiles: /Users/paul/Library/Application Support/OrcaSlicer/system/BBL/filament/Generic PETG-CF @base.json
+DEBUG: Resolved 'Generic PLA @base' from system profiles: /Users/paul/Library/Application Support/OrcaSlicer/system/BBL/filament/Generic PLA @base.json
+INFO: Slicing with orca: /Applications/OrcaSlicer.app/Contents/MacOS/OrcaSlicer --load-settings /var/folders/5j/3g54pf157x7_h9bsv_r9dcpm0000gn/T/fabprint__ey4bxuz/machine.json;/var/folders/5j/3g54pf157x7_h9bsv_r9dcpm0000gn/T/fabprint__ey4bxuz/process.json --load-filaments /var/folders/5j/3g54pf157x7_h9bsv_r9dcpm0000gn/T/fabprint__ey4bxuz/filament_0.json;/var/folders/5j/3g54pf157x7_h9bsv_r9dcpm0000gn/T/fabprint__ey4bxuz/filament_1.json;/var/folders/5j/3g54pf157x7_h9bsv_r9dcpm0000gn/T/fabprint__ey4bxuz/filament_2.json;/var/folders/5j/3g54pf157x7_h9bsv_r9dcpm0000gn/T/fabprint__ey4bxuz/filament_3.json --slice 0 --export-3mf plate_sliced.gcode.3mf --min-save --outputdir /Users/paul/repos/pegturner/output /Users/paul/repos/pegturner/plate.3mf
+INFO: Slicer stdout:
+[2026-03-11 13:53:39.075395] [0x00007ff8539af100] [trace]   Initializing StaticPrintConfigs
+[2026-03-11 13:53:44.423550] [0x00007ff8539af100] [error]   Unable to compile fragment shader of shader program 'imgui':
+ERROR: 0:10: Use of undeclared identifier 'gl_FragColor'
+
+[2026-03-11 13:53:44.424942] [0x00007ff8539af100] [error]   Unable to compile fragment shader of shader program 'flat':
+ERROR: 0:7: Use of undeclared identifier 'gl_FragColor'
+
+[2026-03-11 13:53:44.427598] [0x00007ff8539af100] [error]   Unable to compile fragment shader of shader program 'flat_texture':
+ERROR: 0:9: Use of undeclared identifier 'gl_FragColor'
+
+[2026-03-11 13:53:44.428088] [0x00007ff8539af100] [error]   Unable to compile fragment shader of shader program 'background':
+ERROR: 0:10: Use of undeclared identifier 'gl_FragColor'
+
+[2026-03-11 13:53:44.429222] [0x00007ff8539af100] [error]   Unable to compile fragment shader of shader program 'gouraud_light':
+ERROR: 0:11: Use of undeclared identifier 'gl_FragColor'
+
+[2026-03-11 13:53:44.430336] [0x00007ff8539af100] [error]   Unable to compile fragment shader of shader program 'thumbnail':
+ERROR: 0:17: Use of undeclared identifier 'gl_FragColor'
+ERROR: 0:19: Use of undeclared identifier 'gl_FragColor'
+
+[2026-03-11 13:53:44.433697] [0x00007ff8539af100] [error]   Unable to compile fragment shader of shader program 'gouraud_light_instanced':
+ERROR: 0:11: Use of undeclared identifier 'gl_FragColor'
+
+[2026-03-11 13:53:44.440509] [0x00007ff8539af100] [error]   Unable to compile fragment shader of shader program 'variable_layer_height':
+ERROR: 0:40: Use of undeclared identifier 'gl_FragColor'
+
+[2026-03-11 13:53:44.441643] [0x00007ff8539af100] [error]   Unable to compile fragment shader of shader program 'mm_contour':
+ERROR: 0:7: Use of undeclared identifier 'gl_FragColor'
+
+[2026-03-11 13:53:44.445188] [0x00007ff8539af100] [error]   Unable to load shaders: imgui
+flat
+flat_texture
+background
+gouraud_light
+thumbnail
+gouraud_light_instanced
+variable_layer_height
+mm_contour
+
+
+[2026-03-11 13:53:44.581541] [0x00007ff8539af100] [error]   can not get shader for rendering thumbnail
+
+INFO: Patched sliced 3mf for Bambu Connect compatibility
+INFO: Slicing complete. Output in /Users/paul/repos/pegturner/output
+
+Parts:
+  peg_turner  x1  slot 3  49x49x35mm
+
+Plate: 1 parts on 256x256mm
+Plate exported to plate.3mf
+Slicer: OrcaSlicer 2.3.1
+Sliced gcode in /Users/paul/repos/pegturner/output
+  estimated 1h 1m 39s
+  Checking for Docker image updates...
+Using default tag: latest
+latest: Pulling from fabprint/cloud-bridge
+Digest: sha256:6780c4a58b9e3951952743a92a9c5bdf8e18d9b4bf59501ec9eee297915efa92
+Status: Image is up to date for fabprint/cloud-bridge:latest
+docker.io/fabprint/cloud-bridge:latest
+DEBUG: Running: docker run --rm --platform linux/amd64 -v /Users/paul/.bambu_cloud_token:/input/.bambu_cloud_token:ro fabprint/cloud-bridge status 01P00A451601106 /input/.bambu_cloud_token
+  Printer in FAILED state — sending stop to clear it...
+  Checking for Docker image updates...
+Using default tag: latest
+latest: Pulling from fabprint/cloud-bridge
+Digest: sha256:6780c4a58b9e3951952743a92a9c5bdf8e18d9b4bf59501ec9eee297915efa92
+Status: Image is up to date for fabprint/cloud-bridge:latest
+docker.io/fabprint/cloud-bridge:latest
+DEBUG: Running: docker run --rm --platform linux/amd64 -v /Users/paul/.bambu_cloud_token:/input/.bambu_cloud_token:ro fabprint/cloud-bridge cancel 01P00A451601106 /input/.bambu_cloud_token
+DEBUG: AMS trays: slot0=PLA, slot1=ASA, slot2=PETG-CF, slot3=ABS
+DEBUG: 3MF filament slots: plate=[3], total=5, settings=['Generic ABS @base', 'Generic ASA @base', 'Generic PETG-CF @base', 'Generic PLA @base', 'Generic PLA @base']
+DEBUG: AMS slot mapping: [-1, -1, 2, -1, -1]
+DEBUG: AMS slot mapping2: [{'ams_id': 255, 'slot_id': 255}, {'ams_id': 255, 'slot_id': 255}, {'ams_id': 0, 'slot_id': 2}, {'ams_id': 255, 'slot_id': 255}, {'ams_id': 255, 'slot_id': 255}]
+DEBUG: Patching filament 3 color: #F2754E → #2850E0 (AMS slot 2 PETG-CF)
+DEBUG: Patched config 3MF filament colors to match AMS trays
+DEBUG: Auto-generated config 3MF: /Users/paul/repos/pegturner/output/tmp_07qkrek.3mf (12054 bytes)
+Sending plate_sliced.gcode.3mf via cloud bridge
+  Checking for Docker image updates...
+Using default tag: latest
+latest: Pulling from fabprint/cloud-bridge
+Digest: sha256:6780c4a58b9e3951952743a92a9c5bdf8e18d9b4bf59501ec9eee297915efa92
+Status: Image is up to date for fabprint/cloud-bridge:latest
+docker.io/fabprint/cloud-bridge:latest
+DEBUG: Running: docker run --rm --platform linux/amd64 -v /Users/paul/repos/pegturner/output/plate_sliced.gcode.3mf:/input/plate_sliced.gcode.3mf:ro -v /Users/paul/.bambu_cloud_token:/input/.bambu_cloud_token:ro -v /Users/paul/repos/pegturner/output/tmp_07qkrek.3mf:/input/tmp_07qkrek.3mf:ro fabprint/cloud-bridge print /input/plate_sliced.gcode.3mf 01P00A451601106 /input/.bambu_cloud_token --project plate_1 --timeout 180 --ams-mapping [-1, -1, 2, -1, -1] --ams-mapping2 [{"ams_id": 255, "slot_id": 255}, {"ams_id": 255, "slot_id": 255}, {"ams_id": 0, "slot_id": 2}, {"ams_id": 255, "slot_id": 255}, {"ams_id": 255, "slot_id": 255}] --config-3mf /input/tmp_07qkrek.3mf -v
+DEBUG: Bridge stderr:
+Loaded /tmp/bambu_plugin/libbambu_networking.so
+Agent created: 0x63ad84aedd10
+Logged in as user_1939415276 (paul@fremantle.org)
+connect_server returned: 0
+  server_connected: rc=0 reason=0
+MQTT connected
+start_subscribe: 0
+  printer_connected: 01P00A451601106
+  AMS_STATE: {"print":{"nozzle_temper":45.59375,"bed_temper":51.84375,"ams":{"ams":[{"chip_id":"049a38373631090031333939fffffff","ams_id":"00600A480821028","check":1,"id":"0","humidity":"5","humidity_raw":"14","temp":"35.1","dry_time":0,"info":"1001","tray":[{"id":"0","state":3,"remain":-1,"k":0.019999999552965164,"n":1,"cali_idx":-1,"total_len":330000,"tag_uid":"0000000000000000","tray_id_name":"","tray_info_idx":"GFL99","tray_type":"PLA","tray_sub_brands":"","tray_color":"FCECD6FF","tray_weight":"0","tray_diameter":"0.00","tray_temp":"0","tray_time":"0","bed_temp_type":"0","bed_temp":"0","nozzle_temp_max":"240","nozzle_temp_min":"190","xcam_info":"000000000000000000000000","tray_uuid":"00000000000000000000000000000000","ctype":0,"cols":["FCECD6FF"]},{"id":"1","state":3,"remain":-1,"k":0.019999999552965164,"n":1,"cali_idx":-1,"total_len":330000,"tag_uid":"0000000000000000","tray_id_name":"","tray_info_idx":"GFB98","tray_type":"ASA","tray_sub_brands":"","tray_color":"BCBCBCFF","tray_weight":"0","tray_diameter":"0.00","tray_temp":"0","tray_time":"0","bed_temp_type":"0","bed_temp":"0","nozzle_temp_max":"280","nozzle_temp_min":"240","xcam_info":"000000000000000000000000","tray_uuid":"00000000000000000000000000000000","ctype":0,"cols":["BCBCBCFF"]},{"id":"2","state":3,"remain":-1,"k":0.039999999105930328,"n":1,"cali_idx":-1,"total_len":330000,"tag_uid":"0000000000000000","tray_id_name":"","tray_info_idx":"GFG98","tray_type":"PETG-CF","tray_sub_brands":"","tray_color":"2850E0FF","tray_weight":"0","tray_diameter":"0.00","tray_temp":"0","tray_time":"0","bed_temp_type":"0","bed_temp":"0","nozzle_temp_max":"270","nozzle_temp_min":"240","xcam_info":"000000000000000000000000","tray_uuid":"00000000000000000000000000000000","ctype":0,"cols":["2850E0FF"]},{"id":"3","state":3,"remain":-1,"k":0.019999999552965164,"n":1,"cali_idx":-1,"total_len":330000,"tag_uid":"0000000000000000","tray_id_name":"","tray_info_idx":"GFB99","tray_type":"ABS","tray_sub_brands":"","tray_color":"161616FF","tray_weight":"0","tray_diameter":"0.00","tray_temp":"0","tray_time":"0","bed_temp_type":"0","bed_temp":"0","nozzle_temp_max":"280","nozzle_temp_min":"240","xcam_info":"000000000000000000000000","tray_uuid":"00000000000000000000000000000000","ctype":0,"cols":["161616FF"]}]}]},"command":"push_status","msg":1,"sequence_id":"36318"}}
+pushall attempt 1: 0
+Waiting 20s for printer status...
+  AMS_STATE: {"print":{"upgrade_state":{"sequence_id":0,"progress":"","status":"IDLE","consistency_request":false,"dis_state":1,"err_code":0,"force_upgrade":false,"message":"0%, 0B/s","module":"","new_version_state":1,"cur_state_code":0,"idx2":545789790,"new_ver_list":[{"name":"ota","cur_ver":"01.09.00.00","new_ver":"01.09.01.00","cur_release_type":3,"new_release_type":3},{"name":"ams/0","cur_ver":"00.01.06.62","new_ver":"00.00.06.75","cur_release_type":0,"new_release_type":1}]},"ipcam":{"ipcam_dev":"1","ipcam_record":"enable","timelapse":"disable","resolution":"","tutk_server":"enable","mode_bits":3},"upload":{"status":"idle","progress":0,"message":""},"net":{"conf":0,"info":[{"ip":3422660800,"mask":16777215}]},"nozzle_temper":45.59375,"nozzle_target_temper":0,"bed_temper":51.84375,"bed_target_temper":0,"chamber_temper":5,"mc_print_stage":"1","heatbreak_fan_speed":"0","cooling_fan_speed":"0","big_fan1_speed":"0","big_fan2_speed":"0","mc_percent":0,"mc_remaining_time":61,"ams_status":0,"ams_rfid_status":0,"hw_switch_state":0,"spd_mag":100,"spd_lvl":2,"print_error":0,"lifecycle":"product","wifi_signal":"-68dBm","gcode_state":"FAILED","gcode_file_prepare_percent":"100","queue_number":0,"queue_total":0,"queue_est":0,"queue_sts":0,"project_id":"802436559","profile_id":"655217768","task_id":"802436559","subtask_id":"802436559","subtask_name":"plate_1","gcode_file":"","stg":[],"stg_cur":2,"print_type":"idle","home_flag":24330527,"mc_print_line_number":"0","mc_print_sub_stage":0,"sdcard":true,"force_upgrade":false,"mess_production_state":"active","layer_num":0,"total_layer_num":175,"s_obj":[],"filam_bak":[],"fan_gear":0,"nozzle_diameter":"0.4","nozzle_type":"hardened_steel","cali_version":0,"k":"0.0400","flag3":664,"hms":[],"online":{"ahb":false,"rfid":false,"version":1813060533},"ams":{"ams":[{"chip_id":"049a38373631090031333939fffffff","ams_id":"00600A480821028","check":1,"id":"0","humidity":"5","humidity_raw":"14","temp":"35.1","dry_time":0,"info":"1001","tray":[{"id":"0","state":3,"remain":-1,"k":0.019999999552965164,"n":1,"cali_idx":-1,"total_len":330000,"tag_uid":"0000000000000000","tray_id_name":"","tray_info_idx":"GFL99","tray_type":"PLA","tray_sub_brands":"","tray_color":"FCECD6FF","tray_weight":"0","tray_diameter":"0.00","tray_temp":"0","tray_time":"0","bed_temp_type":"0","bed_temp":"0","nozzle_temp_max":"240","nozzle_temp_min":"190","xcam_info":"000000000000000000000000","tray_uuid":"00000000000000000000000000000000","ctype":0,"cols":["FCECD6FF"]},{"id":"1","state":3,"remain":-1,"k":0.019999999552965164,"n":1,"cali_idx":-1,"total_len":330000,"tag_uid":"0000000000000000","tray_id_name":"","tray_info_idx":"GFB98","tray_type":"ASA","tray_sub_brands":"","tray_color":"BCBCBCFF","tray_weight":"0","tray_diameter":"0.00","tray_temp":"0","tray_time":"0","bed_temp_type":"0","bed_temp":"0","nozzle_temp_max":"280","nozzle_temp_min":"240","xcam_info":"000000000000000000000000","tray_uuid":"00000000000000000000000000000000","ctype":0,"cols":["BCBCBCFF"]},{"id":"2","state":3,"remain":-1,"k":0.039999999105930328,"n":1,"cali_idx":-1,"total_len":330000,"tag_uid":"0000000000000000","tray_id_name":"","tray_info_idx":"GFG98","tray_type":"PETG-CF","tray_sub_brands":"","tray_color":"2850E0FF","tray_weight":"0","tray_diameter":"0.00","tray_temp":"0","tray_time":"0","bed_temp_type":"0","bed_temp":"0","nozzle_temp_max":"270","nozzle_temp_min":"240","xcam_info":"000000000000000000000000","tray_uuid":"00000000000000000000000000000000","ctype":0,"cols":["2850E0FF"]},{"id":"3","state":3,"remain":-1,"k":0.019999999552965164,"n":1,"cali_idx":-1,"total_len":330000,"tag_uid":"0000000000000000","tray_id_name":"","tray_info_idx":"GFB99","tray_type":"ABS","tray_sub_brands":"","tray_color":"161616FF","tray_weight":"0","tray_diameter":"0.00","tray_temp":"0","tray_time":"0","bed_temp_type":"0","bed_temp":"0","nozzle_temp_max":"280","nozzle_temp_min":"240","xcam_info":"000000000000000000000000","tray_uuid":"00000000000000000000000000000000","ctype":0,"cols":["161616FF"]}]}],"ams_exist_bits":"1","tray_exist_bits":"f","tray_is_bbl_bits":"f","tray_tar":"2","tray_now":"255","tray_pre":"255","tray_read_done_bits":"f","tray_reading_bits":"0","version":17,"insert_flag":true,"power_on_flag":false},"vt_tray":{"id":"254","tag_uid":"0000000000000000","tray_id_name":"","tray_info_idx":"GFL99","tray_type":"PLA","tray_sub_brands":"","tray_color":"161616FF","tray_weight":"0","tray_diameter":"0.00","tray_temp":"0","tray_time":"0","bed_temp_type":"0","bed_temp":"0","nozzle_temp_max":"240","nozzle_temp_min":"190","xcam_info":"000000000000000000000000","tray_uuid":"00000000000000000000000000000000","remain":0,"k":0.019999999552965164,"n":1,"cali_idx":-1},"lights_report":[{"node":"chamber_light","mode":"on"}],"command":"push_status","msg":0,"sequence_id":"36319"}}
+  mqtt: {"print":{"nozzle_temper":45.53125,"bed_temper":51.78125,"command":"push_status","msg":1,"sequence_id":"36320"}}
+  mqtt: {"print":{"nozzle_temper":45.46875,"bed_temper":51.71875,"command":"push_status","msg":1,"sequence_id":"36321"}}
+  mqtt: {"print":{"nozzle_temper":45.40625,"bed_temper":51.6875,"command":"push_status","msg":1,"sequence_id":"36322"}}
+  mqtt: {"print":{"nozzle_temper":45.375,"bed_temper":51.625,"command":"push_status","msg":1,"sequence_id":"36323"}}
+  mqtt: {"print":{"nozzle_temper":45.3125,"bed_temper":51.5625,"command":"push_status","msg":1,"sequence_id":"36324"}}
+  mqtt: {"print":{"nozzle_temper":45.28125,"bed_temper":51.53125,"command":"push_status","msg":1,"sequence_id":"36325"}}
+  mqtt: {"print":{"nozzle_temper":45.21875,"bed_temper":51.46875,"command":"push_status","msg":1,"sequence_id":"36326"}}
+  [Create] code=0 msg=
+  [Upload] code=0 msg=
+  mqtt: {"print":{"nozzle_temper":45.15625,"bed_temper":51.40625,"command":"push_status","msg":1,"sequence_id":"36327"}}
+  mqtt: {"print":{"nozzle_temper":45.09375,"bed_temper":51.34375,"command":"push_status","msg":1,"sequence_id":"36328"}}
+  [Upload] code=0 msg=
+  [Upload] code=0 msg=
+  [Upload] code=0 msg=
+  [Upload] code=0 msg=
+  [Upload] code=0 msg=
+  [Upload] code=0 msg=
+  [Upload] code=0 msg=
+  [Upload] code=0 msg=
+  [Upload] code=0 msg=
+  [Upload] code=0 msg=
+  [Upload] code=0 msg=0.0K/1.1M
+  [Upload] code=0 msg=0.0K/1.1M
+  [Upload] code=0 msg=0.0K/1.1M
+  [Upload] code=0 msg=0.0K/1.1M
+  [Upload] code=0 msg=0.0K/1.1M
+  [Upload] code=0 msg=0.0K/1.1M
+  [Upload] code=5 msg=0.1M/1.1M
+  [Upload] code=5 msg=0.1M/1.1M
+  [Upload] code=11 msg=0.1M/1.1M
+  [Upload] code=11 msg=0.1M/1.1M
+  [Upload] code=17 msg=0.2M/1.1M
+  [Upload] code=17 msg=0.2M/1.1M
+  [Upload] code=23 msg=0.2M/1.1M
+  [Upload] code=23 msg=0.2M/1.1M
+  [Upload] code=29 msg=0.3M/1.1M
+  [Upload] code=29 msg=0.3M/1.1M
+  [Upload] code=34 msg=0.4M/1.1M
+  [Upload] code=34 msg=0.4M/1.1M
+  [Upload] code=40 msg=0.4M/1.1M
+  [Upload] code=40 msg=0.4M/1.1M
+  [Upload] code=46 msg=0.5M/1.1M
+  [Upload] code=46 msg=0.5M/1.1M
+  [Upload] code=52 msg=0.6M/1.1M
+  [Upload] code=52 msg=0.6M/1.1M
+  [Upload] code=58 msg=0.6M/1.1M
+  [Upload] code=58 msg=0.6M/1.1M
+  [Upload] code=63 msg=0.7M/1.1M
+  [Upload] code=63 msg=0.7M/1.1M
+  [Upload] code=69 msg=0.8M/1.1M
+  [Upload] code=69 msg=0.8M/1.1M
+  [Upload] code=75 msg=0.8M/1.1M
+  [Upload] code=75 msg=0.8M/1.1M
+  [Upload] code=81 msg=0.9M/1.1M
+  [Upload] code=81 msg=0.9M/1.1M
+  [Upload] code=87 msg=0.9M/1.1M
+  [Upload] code=87 msg=0.9M/1.1M
+  [Upload] code=92 msg=1.0M/1.1M
+  [Upload] code=92 msg=1.0M/1.1M
+  [Upload] code=98 msg=1.1M/1.1M
+  [Upload] code=98 msg=1.1M/1.1M
+  [Upload] code=100 msg=1.1M/1.1M
+  [Upload] code=100 msg=1.1M/1.1M
+  mqtt: {"print":{"nozzle_temper":45.0625,"bed_temper":51.3125,"command":"push_status","msg":1,"sequence_id":"36329"}}
+  [Upload] code=100 msg=1.1M/1.1M
+  [Upload] code=100 msg=1.1M/1.1M
+  [Upload] code=100 msg=1.1M/1.1M
+  [Upload] code=100 msg=1.1M/1.1M
+  [Upload] code=100 msg=1.1M/1.1M
+  [Upload] code=100 msg=1.1M/1.1M
+  [Upload] code=100 msg=1.1M/1.1M
+  [Upload] code=100 msg=1.1M/1.1M
+  mqtt: {"print":{"nozzle_temper":45.03125,"bed_temper":51.28125,"command":"push_status","msg":1,"sequence_id":"36330"}}
+  [Sending] code=0 msg=
+start_print attempt 1 returned: -1
+  Print job sent to 01P00A451601106
+  If the printer shows 'Failed to get AMS mapping table', press Resume on the touchscreen.
