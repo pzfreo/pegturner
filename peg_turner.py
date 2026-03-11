@@ -3,10 +3,22 @@ Peg Turner — 3D CAD model for cello peg turning tool.
 See SPEC.md for full design specification.
 
 Mushroom shape: narrow stalk (peg socket) + wide solid cap (scalloped grip).
+
+Usage:
+    python peg_turner.py              # Original design (for felt insert)
+    python peg_turner.py --tpu-insert # Enlarged slot + TPU cup insert
 """
 
+import argparse
 import math
 from build123d import *
+
+parser = argparse.ArgumentParser(description="Generate peg turner CAD model")
+parser.add_argument(
+    "--tpu-insert", action="store_true",
+    help="Enlarge slot and generate a TPU protective cup insert",
+)
+args = parser.parse_args()
 
 # === Parameters ===
 
@@ -14,8 +26,20 @@ from build123d import *
 PEG_HEAD_DIAMETER = 31.0  # mm
 PEG_HEAD_THICKNESS = 15.0  # mm
 TOLERANCE = 0.4  # mm per side for ABS
-SLOT_LENGTH = PEG_HEAD_DIAMETER + TOLERANCE  # 28.4 mm
-SLOT_WIDTH = PEG_HEAD_THICKNESS + TOLERANCE  # 10.4 mm
+SLOT_LENGTH_BASE = PEG_HEAD_DIAMETER + TOLERANCE  # 28.4 mm
+SLOT_WIDTH_BASE = PEG_HEAD_THICKNESS + TOLERANCE  # 10.4 mm
+
+# TPU insert parameters
+INSERT_WALL = 2.0  # mm wall thickness for TPU insert
+INSERT_SLOT_ENLARGE = 1.0  # mm per side to enlarge slot in main body
+INSERT_TOLERANCE = 0.2  # mm per side clearance for insert fit
+
+if args.tpu_insert:
+    SLOT_LENGTH = SLOT_LENGTH_BASE + 2 * INSERT_SLOT_ENLARGE
+    SLOT_WIDTH = SLOT_WIDTH_BASE + 2 * INSERT_SLOT_ENLARGE
+else:
+    SLOT_LENGTH = SLOT_LENGTH_BASE
+    SLOT_WIDTH = SLOT_WIDTH_BASE
 
 # Stalk (narrow section with slot, stadium shape)
 END_WALL_THICKNESS = 3.0  # mm (wall at ends of slot, along length axis)
@@ -49,7 +73,7 @@ SCALLOP_FILLET = 2.0  # mm fillet on scallop edges (matches exterior fillet)
 # Text emboss (recessed into top face of cap)
 TEXT_STRING = "Chelli"
 TEXT_FONT = "MrsSaintDelafield-Regular.ttf"
-TEXT_DEPTH = 0.6  # mm recess depth
+TEXT_DEPTH = 1.0  # mm recess depth
 TEXT_SIZE = 16.0  # mm font size
 
 # === Build the peg turner ===
@@ -191,16 +215,103 @@ print(f"  Stalk base fillet:   {STALK_BASE_FILLET} mm")
 print(f"  Text size:           {TEXT_SIZE:.1f} mm")
 print(f"  Bounding box:        {bb.max.X - bb.min.X:.1f} × {bb.max.Y - bb.min.Y:.1f} × {bb.max.Z - bb.min.Z:.1f} mm")
 
+# === Build TPU insert (if requested) ===
+
+insert = None
+if args.tpu_insert:
+    # Outer shell: fits inside the enlarged slot (with clearance for glue)
+    insert_outer_length = SLOT_LENGTH - 2 * INSERT_TOLERANCE
+    insert_outer_width = SLOT_WIDTH - 2 * INSERT_TOLERANCE
+    insert_outer_radius = min(insert_outer_length, insert_outer_width) / 2 - 0.01
+
+    # Inner cavity: 2mm wall on each side
+    insert_inner_length = insert_outer_length - 2 * INSERT_WALL
+    insert_inner_width = insert_outer_width - 2 * INSERT_WALL
+    insert_inner_radius = min(insert_inner_length, insert_inner_width) / 2 - 0.01
+
+    INSERT_HEIGHT_INSET = 1.0  # mm shorter than slot so insert sits inside
+    insert_height = PEG_HEAD_DEPTH - INSERT_HEIGHT_INSET
+
+    # Outer shell (closed-top cup)
+    insert_outer_profile = RectangleRounded(
+        width=insert_outer_length,
+        height=insert_outer_width,
+        radius=insert_outer_radius,
+    )
+    insert_solid = extrude(insert_outer_profile, insert_height)
+
+    # Inner cavity (open at bottom, closed at top with INSERT_WALL ceiling)
+    insert_inner_profile = RectangleRounded(
+        width=insert_inner_length,
+        height=insert_inner_width,
+        radius=insert_inner_radius,
+    )
+    insert_cavity = Pos(0, 0, -1) * extrude(
+        insert_inner_profile, insert_height - INSERT_WALL + 1
+    )
+    insert = insert_solid - insert_cavity
+
+    # Chamfer the insert outer top edges to clear the slot's interior ceiling fillet
+    insert_outer_top_edges = insert.edges().filter_by(
+        lambda e: (
+            abs(e.center().Z - insert_height) < 0.5
+            and (e.center().X**2 + e.center().Y**2)
+            > (min(insert_inner_length, insert_inner_width) / 2) ** 2
+        )
+    )
+    if insert_outer_top_edges:
+        insert = chamfer(insert_outer_top_edges, INTERIOR_FILLET)
+
+    # Shift insert up so its ceiling is flush with the slot ceiling
+    insert = Pos(0, 0, INSERT_HEIGHT_INSET) * insert
+
+    # Interference check: insert must not overlap with turner solid
+    interference = turner & insert
+    try:
+        interference_vol = interference.volume
+    except Exception:
+        interference_vol = 0.0
+    insert_vol = insert.volume
+    if interference_vol > 0.01:
+        print(f"\n*** INTERFERENCE DETECTED ***")
+        print(f"  Overlap volume: {interference_vol:.2f} mm³ ({interference_vol / insert_vol * 100:.1f}% of insert)")
+        raise ValueError(
+            f"TPU insert interferes with turner body by {interference_vol:.2f} mm³"
+        )
+    else:
+        print(f"\n  Interference check:  PASS (no overlap)")
+
+    print(f"\n=== TPU Insert Dimensions ===")
+    print(f"  Outer (L × W):       {insert_outer_length:.1f} × {insert_outer_width:.1f} mm")
+    print(f"  Inner (L × W):       {insert_inner_length:.1f} × {insert_inner_width:.1f} mm")
+    print(f"  Wall thickness:      {INSERT_WALL} mm")
+    print(f"  Height:              {insert_height} mm")
+    ibb = insert.bounding_box()
+    print(f"  Bounding box:        {ibb.max.X - ibb.min.X:.1f} × {ibb.max.Y - ibb.min.Y:.1f} × {ibb.max.Z - ibb.min.Z:.1f} mm")
+
 # === Export ===
 
 STEP_FILE = "peg_turner.step"
 export_step(turner, STEP_FILE)
-print(f"Exported STEP file: {STEP_FILE}")
+print(f"\nExported STEP file: {STEP_FILE}")
+
+if insert is not None:
+    INSERT_STEP_FILE = "peg_insert.step"
+    export_step(insert, INSERT_STEP_FILE)
+    print(f"Exported STEP file: {INSERT_STEP_FILE}")
 
 # Show in OCP CAD Viewer if active
 try:
     from ocp_vscode import show
-    show(turner)
+    if insert is not None:
+        show(
+            turner, insert,
+            names=["turner", "insert"],
+            colors=["steelblue", "orange"],
+            alphas=[0.8, 1.0],
+        )
+    else:
+        show(turner)
     print("Displayed in OCP CAD Viewer")
 except Exception:
     pass
