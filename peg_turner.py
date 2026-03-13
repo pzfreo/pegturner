@@ -30,9 +30,9 @@ SLOT_LENGTH_BASE = PEG_HEAD_DIAMETER + TOLERANCE  # 28.4 mm
 SLOT_WIDTH_BASE = PEG_HEAD_THICKNESS + TOLERANCE  # 10.4 mm
 
 # TPU insert parameters
-INSERT_WALL = 2.0  # mm wall thickness for TPU insert
+INSERT_WALL = 1.5  # mm wall thickness for TPU insert
 INSERT_SLOT_ENLARGE = 1.0  # mm per side to enlarge slot in main body
-INSERT_TOLERANCE = 0.2  # mm per side clearance for insert fit
+INSERT_TOLERANCE = 0.0  # mm per side clearance for insert fit
 
 if args.tpu_insert:
     SLOT_LENGTH = SLOT_LENGTH_BASE + 2 * INSERT_SLOT_ENLARGE
