@@ -307,6 +307,21 @@ turner_flipped = flip * turner
 
 inlay_flipped = flip * text_solid
 
+# Interference check: inlay must not overlap with body
+inlay_interference = turner_flipped & inlay_flipped
+try:
+    inlay_interference_vol = inlay_interference.volume
+except Exception:
+    inlay_interference_vol = 0.0
+if inlay_interference_vol > 0.01:
+    print(f"\n*** INLAY INTERFERENCE DETECTED ***")
+    print(f"  Overlap volume: {inlay_interference_vol:.2f} mm³")
+    raise ValueError(
+        f"Text inlay interferes with body by {inlay_interference_vol:.2f} mm³"
+    )
+else:
+    print(f"\n  Inlay interference check: PASS (no overlap)")
+
 suffix = "_wi" if args.tpu_insert else ""
 export_step(turner_flipped, f"peg_turner{suffix}_body.step")
 export_step(inlay_flipped, f"peg_turner{suffix}_inlay.step")
