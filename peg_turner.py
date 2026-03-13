@@ -5,8 +5,8 @@ See SPEC.md for full design specification.
 Mushroom shape: narrow stalk (peg socket) + wide solid cap (scalloped grip).
 
 Usage:
-    python peg_turner.py              # Original design (for felt insert)
-    python peg_turner.py --tpu-insert # Enlarged slot + TPU cup insert
+    python peg_turner.py              # Default: enlarged slot + TPU cup insert
+    python peg_turner.py --no-tpu-insert # Original design (no insert)
 """
 
 import argparse
@@ -15,10 +15,11 @@ from build123d import *
 
 parser = argparse.ArgumentParser(description="Generate peg turner CAD model")
 parser.add_argument(
-    "--tpu-insert", action="store_true",
-    help="Enlarge slot and generate a TPU protective cup insert",
+    "--no-tpu-insert", action="store_true",
+    help="Use original slot dimensions without TPU insert",
 )
 args = parser.parse_args()
+args.tpu_insert = not args.no_tpu_insert
 
 # === Parameters ===
 
@@ -300,18 +301,103 @@ if insert is not None:
     export_step(insert, INSERT_STEP_FILE)
     print(f"Exported STEP file: {INSERT_STEP_FILE}")
 
+# Export 3MF with text inlay + body (print-ready orientation, cap down)
+flip = Pos(0, 0, TOTAL_HEIGHT) * Rot(180, 0, 0)
+turner_flipped = flip * turner
+
+inlay_flipped = flip * text_solid
+
+# Interference check: inlay must not overlap with body
+inlay_interference = turner_flipped & inlay_flipped
+try:
+    inlay_interference_vol = inlay_interference.volume
+except Exception:
+    inlay_interference_vol = 0.0
+if inlay_interference_vol > 0.01:
+    print(f"\n*** INLAY INTERFERENCE DETECTED ***")
+    print(f"  Overlap volume: {inlay_interference_vol:.2f} mm³")
+    raise ValueError(
+        f"Text inlay interferes with body by {inlay_interference_vol:.2f} mm³"
+    )
+else:
+    print(f"\n  Inlay interference check: PASS (no overlap)")
+
+suffix = "_wi" if args.tpu_insert else ""
+export_step(turner_flipped, f"peg_turner{suffix}_body.step")
+export_step(inlay_flipped, f"peg_turner{suffix}_inlay.step")
+print(f"Exported STEP file: peg_turner{suffix}_body.step")
+print(f"Exported STEP file: peg_turner{suffix}_inlay.step")
+
+# Export 3MF with exactly two parts: inlay + body
+import copy as copy_module
+from build123d.mesher import Lib3MF
+
+MF_FILE = f"peg_turner{suffix}.3mf"
+libpath = __import__("os").path.dirname(Lib3MF.__file__)
+wrapper = Lib3MF.Wrapper(__import__("os").path.join(libpath, "lib3mf"))
+model = wrapper.CreateModel()
+model.SetUnit(Lib3MF.ModelUnit.MilliMeter)
+identity = wrapper.GetIdentityTransform()
+
+
+def _add_mesh(shape, name, lin_def=0.001, ang_def=0.1):
+    """Tessellate a single Shape and add it as one mesh object."""
+    verts, tris = Mesher._mesh_shape(
+        copy_module.deepcopy(shape), lin_def, ang_def
+    )
+    if len(verts) < 3 or not tris:
+        return None
+    v3mf, t3mf = Mesher._create_3mf_mesh(verts, tris)
+    mesh = model.AddMeshObject()
+    mesh.SetGeometry(v3mf, t3mf)
+    mesh.SetType(Lib3MF.ObjectType.Model)
+    mesh.SetName(name)
+    return mesh
+
+
+# Tessellate all inlay solids and merge into a single mesh
+all_verts = []
+all_tris = []
+vert_offset = 0
+for solid in inlay_flipped.solids():
+    verts, tris = Mesher._mesh_shape(
+        copy_module.deepcopy(solid), 0.01, 0.5
+    )
+    if len(verts) < 3 or not tris:
+        continue
+    all_verts.extend(verts)
+    all_tris.extend((a + vert_offset, b + vert_offset, c + vert_offset)
+                     for a, b, c in tris)
+    vert_offset += len(verts)
+
+v3mf, t3mf = Mesher._create_3mf_mesh(all_verts, all_tris)
+inlay_mesh = model.AddMeshObject()
+inlay_mesh.SetGeometry(v3mf, t3mf)
+inlay_mesh.SetType(Lib3MF.ObjectType.Model)
+inlay_mesh.SetName("inlay")
+model.AddBuildItem(inlay_mesh, identity)
+
+# Tessellate body as a single mesh
+body_mesh = _add_mesh(turner_flipped.solids()[0], "body")
+model.AddBuildItem(body_mesh, identity)
+
+writer = model.QueryWriter("3mf")
+writer.WriteToFile(MF_FILE)
+print(f"Exported 3MF file: {MF_FILE}")
+
 # Show in OCP CAD Viewer if active
 try:
     from ocp_vscode import show
+    parts = [turner_flipped, inlay_flipped]
+    names = ["body", "inlay"]
+    colors = ["steelblue", "gold"]
+    alphas = [0.8, 1.0]
     if insert is not None:
-        show(
-            turner, insert,
-            names=["turner", "insert"],
-            colors=["steelblue", "orange"],
-            alphas=[0.8, 1.0],
-        )
-    else:
-        show(turner)
+        parts.append(insert)
+        names.append("insert")
+        colors.append("orange")
+        alphas.append(1.0)
+    show(*parts, names=names, colors=colors, alphas=alphas)
     print("Displayed in OCP CAD Viewer")
 except Exception:
     pass

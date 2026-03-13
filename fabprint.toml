@@ -19,8 +19,6 @@ serial = "01P00A451601106"
 
 
 [[parts]]
-file = "peg_turner.step"
+file = "peg_turner.3mf"
 copies = 1
-orient = "upright"
-rotate = [180, 0, 0]
 filament = "Generic PETG-CF @base"
