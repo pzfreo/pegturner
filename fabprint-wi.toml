@@ -22,3 +22,6 @@ serial = "01P00A451601106"
 file = "peg_turner_wi.3mf"
 copies = 1
 filament = "Generic PETG-CF @base"
+
+[parts.filaments]
+inlay = "Bambu PLA Basic @BBL X1C"
