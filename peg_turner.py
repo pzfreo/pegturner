@@ -45,6 +45,10 @@ parser.add_argument(
     "--engrave-depth", type=float, default=0.8,
     help="Engrave depth in mm (default: 0.8)",
 )
+parser.add_argument(
+    "--insert-side-extras", type=float, nargs="+", default=[0, 0.5, 1.0],
+    help="Extra side wall thickness(es) for TPU inserts in mm (default: 0 0.5 1.0)",
+)
 args = parser.parse_args()
 args.tpu_insert = not args.no_tpu_insert
 
@@ -58,7 +62,7 @@ SLOT_LENGTH_BASE = PEG_HEAD_DIAMETER + TOLERANCE  # 28.4 mm
 SLOT_WIDTH_BASE = PEG_HEAD_THICKNESS + TOLERANCE  # 10.4 mm
 
 # TPU insert parameters
-INSERT_WALL = 1.5  # mm wall thickness for TPU insert
+INSERT_BASE_WALL = 1.5  # mm wall thickness for ends and ceiling
 INSERT_SLOT_ENLARGE = 1.0  # mm per side to enlarge slot in main body
 INSERT_TOLERANCE = 0.0  # mm per side clearance for insert fit
 INSERT_HEIGHT_INSET = 1.0  # mm shorter than slot so insert sits inside
@@ -294,23 +298,16 @@ print(f"  Stalk base fillet:   {STALK_BASE_FILLET} mm")
 print(f"  Text size:           {TEXT_SIZE:.1f} mm")
 print(f"  Bounding box:        {bb.max.X - bb.min.X:.1f} × {bb.max.Y - bb.min.Y:.1f} × {bb.max.Z - bb.min.Z:.1f} mm")
 
-# === Build TPU insert (if requested) ===
+# === Build TPU inserts (if requested) ===
 
-insert = None
+inserts = {}
 if args.tpu_insert:
-    # Outer shell: fits inside the enlarged slot (with clearance for glue)
+    # Outer shell dimensions: same for all inserts
     insert_outer_length = SLOT_LENGTH - 2 * INSERT_TOLERANCE
     insert_outer_width = SLOT_WIDTH - 2 * INSERT_TOLERANCE
     insert_outer_radius = min(insert_outer_length, insert_outer_width) / 2 - 0.01
-
-    # Inner cavity: INSERT_WALL on each side
-    insert_inner_length = insert_outer_length - 2 * INSERT_WALL
-    insert_inner_width = insert_outer_width - 2 * INSERT_WALL
-    insert_inner_radius = min(insert_inner_length, insert_inner_width) / 2 - 0.01
-
     insert_height = PEG_HEAD_DEPTH - INSERT_HEIGHT_INSET
 
-    # Outer shell (closed-top cup)
     insert_outer_profile = RectangleRounded(
         width=insert_outer_length,
         height=insert_outer_width,
@@ -318,54 +315,66 @@ if args.tpu_insert:
     )
     insert_solid = extrude(insert_outer_profile, insert_height)
 
-    # Inner cavity (open at bottom, closed at top with INSERT_WALL ceiling)
-    insert_inner_profile = RectangleRounded(
-        width=insert_inner_length,
-        height=insert_inner_width,
-        radius=insert_inner_radius,
-    )
-    insert_cavity = Pos(0, 0, -1) * extrude(
-        insert_inner_profile, insert_height - INSERT_WALL + 1
-    )
-    insert = insert_solid - insert_cavity
+    for side_extra in args.insert_side_extras:
+        side_wall = INSERT_BASE_WALL + side_extra
+        label = f"{side_wall:.1f}".replace(".", "_")
 
-    # Chamfer the insert outer top edges to clear the slot's interior ceiling fillet
-    insert_outer_top_edges = insert.edges().filter_by(
-        lambda e: (
-            abs(e.center().Z - insert_height) < 0.5
-            and (e.center().X**2 + e.center().Y**2)
-            > (min(insert_inner_length, insert_inner_width) / 2) ** 2
+        # Inner cavity: base wall at ends, variable wall at sides
+        insert_inner_length = insert_outer_length - 2 * INSERT_BASE_WALL
+        insert_inner_width = insert_outer_width - 2 * side_wall
+        insert_inner_radius = min(insert_inner_length, insert_inner_width) / 2 - 0.01
+
+        insert_inner_profile = RectangleRounded(
+            width=insert_inner_length,
+            height=insert_inner_width,
+            radius=insert_inner_radius,
         )
-    )
-    if insert_outer_top_edges:
-        insert = chamfer(insert_outer_top_edges, INTERIOR_FILLET)
-
-    # Shift insert up so its ceiling is flush with the slot ceiling
-    insert = Pos(0, 0, INSERT_HEIGHT_INSET) * insert
-
-    # Interference check: insert must not overlap with turner solid
-    interference = turner & insert
-    try:
-        interference_vol = interference.volume
-    except Exception:
-        interference_vol = 0.0
-    insert_vol = insert.volume
-    if interference_vol > 0.01:
-        print(f"\n*** INTERFERENCE DETECTED ***")
-        print(f"  Overlap volume: {interference_vol:.2f} mm³ ({interference_vol / insert_vol * 100:.1f}% of insert)")
-        raise ValueError(
-            f"TPU insert interferes with turner body by {interference_vol:.2f} mm³"
+        insert_cavity = Pos(0, 0, -1) * extrude(
+            insert_inner_profile, insert_height - INSERT_BASE_WALL + 1
         )
-    else:
-        print(f"\n  Interference check:  PASS (no overlap)")
+        insert = insert_solid - insert_cavity
 
-    print(f"\n=== TPU Insert Dimensions ===")
-    print(f"  Outer (L × W):       {insert_outer_length:.1f} × {insert_outer_width:.1f} mm")
-    print(f"  Inner (L × W):       {insert_inner_length:.1f} × {insert_inner_width:.1f} mm")
-    print(f"  Wall thickness:      {INSERT_WALL} mm")
-    print(f"  Height:              {insert_height} mm")
-    ibb = insert.bounding_box()
-    print(f"  Bounding box:        {ibb.max.X - ibb.min.X:.1f} × {ibb.max.Y - ibb.min.Y:.1f} × {ibb.max.Z - ibb.min.Z:.1f} mm")
+        # Chamfer the insert outer top edges to clear the slot's interior ceiling fillet
+        insert_outer_top_edges = insert.edges().filter_by(
+            lambda e: (
+                abs(e.center().Z - insert_height) < 0.5
+                and (e.center().X**2 + e.center().Y**2)
+                > (min(insert_inner_length, insert_inner_width) / 2) ** 2
+            )
+        )
+        if insert_outer_top_edges:
+            insert = chamfer(insert_outer_top_edges, INTERIOR_FILLET)
+
+        # Shift insert up so its ceiling is flush with the slot ceiling
+        insert = Pos(0, 0, INSERT_HEIGHT_INSET) * insert
+
+        # Interference check: insert must not overlap with turner solid
+        interference = turner & insert
+        try:
+            interference_vol = interference.volume
+        except Exception:
+            interference_vol = 0.0
+        insert_vol = insert.volume
+        if interference_vol > 0.01:
+            print(f"\n*** INTERFERENCE DETECTED (side wall {side_wall}mm) ***")
+            print(f"  Overlap volume: {interference_vol:.2f} mm³ ({interference_vol / insert_vol * 100:.1f}% of insert)")
+            raise ValueError(
+                f"TPU insert (side wall {side_wall}mm) interferes with turner body by {interference_vol:.2f} mm³"
+            )
+        else:
+            print(f"\n  Interference check ({side_wall}mm side wall): PASS")
+
+        print(f"\n=== TPU Insert ({side_wall}mm side wall) ===")
+        print(f"  Outer (L × W):       {insert_outer_length:.1f} × {insert_outer_width:.1f} mm")
+        print(f"  Inner (L × W):       {insert_inner_length:.1f} × {insert_inner_width:.1f} mm")
+        print(f"  End wall:            {INSERT_BASE_WALL} mm")
+        print(f"  Side wall:           {side_wall} mm")
+        print(f"  Ceiling:             {INSERT_BASE_WALL} mm")
+        print(f"  Height:              {insert_height} mm")
+        ibb = insert.bounding_box()
+        print(f"  Bounding box:        {ibb.max.X - ibb.min.X:.1f} × {ibb.max.Y - ibb.min.Y:.1f} × {ibb.max.Z - ibb.min.Z:.1f} mm")
+
+        inserts[label] = insert
 
 # === Export ===
 
@@ -373,10 +382,10 @@ STEP_FILE = "peg_turner_wi.step" if args.tpu_insert else "peg_turner.step"
 export_step(turner, STEP_FILE)
 print(f"\nExported STEP file: {STEP_FILE}")
 
-if insert is not None:
-    INSERT_STEP_FILE = "peg_insert.step"
-    export_step(insert, INSERT_STEP_FILE)
-    print(f"Exported STEP file: {INSERT_STEP_FILE}")
+for label, insert in inserts.items():
+    fname = f"peg_insert_{label}.step"
+    export_step(insert, fname)
+    print(f"Exported STEP file: {fname}")
 
 # Export 3MF with text inlay + body (print-ready orientation, cap down)
 flip = Pos(0, 0, TOTAL_HEIGHT) * Rot(180, 0, 0)
@@ -498,13 +507,18 @@ else:
 # Show in OCP CAD Viewer if active
 try:
     from ocp_vscode import show
-    parts = [turner_flipped, inlay_flipped]
-    names = ["body", "inlay"]
-    colors = ["steelblue", "gold"]
-    alphas = [0.8, 1.0]
-    if insert is not None:
-        parts.append(insert)
-        names.append("insert")
+    parts = [turner_flipped]
+    names = ["body"]
+    colors = ["steelblue"]
+    alphas = [0.8]
+    if not ENGRAVE:
+        parts.append(inlay_flipped)
+        names.append("inlay")
+        colors.append("gold")
+        alphas.append(1.0)
+    for label, ins in inserts.items():
+        parts.append(ins)
+        names.append(f"insert_{label}")
         colors.append("orange")
         alphas.append(1.0)
     show(*parts, names=names, colors=colors, alphas=alphas)

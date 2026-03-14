@@ -20,5 +20,5 @@ serial = "01P00A451601106"
 
 [[parts]]
 file = "peg_turner_wi_body.step"
-copies = 1
+copies = 10
 filament = 3
