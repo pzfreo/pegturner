@@ -22,7 +22,7 @@ parser.add_argument(
     help="Use original slot dimensions without TPU insert",
 )
 parser.add_argument(
-    "--text", type=str, default=None,
+    "--text", type=str, default="Chelli\\nStrings",
     help="Text to emboss (use \\n for line breaks)",
 )
 parser.add_argument(
@@ -30,20 +30,20 @@ parser.add_argument(
     help="Font as URL to a .ttf file",
 )
 parser.add_argument(
-    "--text-size", type=float, default=None,
-    help="Font size in mm",
+    "--text-size", type=float, default=12.0,
+    help="Font size in mm (default: 12.0)",
 )
 parser.add_argument(
     "--inlay-depth", type=float, default=0.2,
     help="Inlay recess depth in mm (default: 0.2, single layer)",
 )
 parser.add_argument(
-    "--engrave", action="store_true",
-    help="Engrave text instead of inlay (V-shaped groove, no supports needed)",
+    "--engrave", action=argparse.BooleanOptionalAction, default=True,
+    help="Engrave text (default) or use --no-engrave for inlay mode",
 )
 parser.add_argument(
-    "--engrave-depth", type=float, default=1.0,
-    help="Engrave depth in mm (default: 1.0)",
+    "--engrave-depth", type=float, default=0.8,
+    help="Engrave depth in mm (default: 0.8)",
 )
 args = parser.parse_args()
 args.tpu_insert = not args.no_tpu_insert
@@ -61,6 +61,7 @@ SLOT_WIDTH_BASE = PEG_HEAD_THICKNESS + TOLERANCE  # 10.4 mm
 INSERT_WALL = 1.5  # mm wall thickness for TPU insert
 INSERT_SLOT_ENLARGE = 1.0  # mm per side to enlarge slot in main body
 INSERT_TOLERANCE = 0.0  # mm per side clearance for insert fit
+INSERT_HEIGHT_INSET = 1.0  # mm shorter than slot so insert sits inside
 
 if args.tpu_insert:
     SLOT_LENGTH = SLOT_LENGTH_BASE + 2 * INSERT_SLOT_ENLARGE
@@ -98,8 +99,20 @@ NUM_SCALLOPS = 12
 SCALLOP_DEPTH = 4.0  # mm
 SCALLOP_FILLET = 2.0  # mm fillet on scallop edges (matches exterior fillet)
 
+# Text layout
+LINE_SPACING_FACTOR = 1.0  # multiplier for font size to get line spacing
+
+# V-taper angles to try (steepest first, falls back to straight walls)
+ENGRAVE_TAPER_ANGLES = (45, 30, 20, 10)
+
+# Mesh tessellation
+MESH_LINEAR_DEFLECTION = 0.001  # mm (default mesh resolution)
+MESH_ANGULAR_DEFLECTION = 0.1  # radians
+INLAY_LINEAR_DEFLECTION = 0.01  # mm (coarser for text inlay)
+INLAY_ANGULAR_DEFLECTION = 0.5  # radians
+
 # Text emboss (recessed into top face of cap)
-TEXT_STRING = args.text if args.text is not None else "Chelli"
+TEXT_STRING = args.text
 TEXT_STRING = TEXT_STRING.replace("\\n", "\n")
 
 if args.font is not None:
@@ -114,7 +127,7 @@ else:
 ENGRAVE = args.engrave
 ENGRAVE_DEPTH = args.engrave_depth
 TEXT_DEPTH = ENGRAVE_DEPTH if ENGRAVE else args.inlay_depth
-TEXT_SIZE = args.text_size if args.text_size is not None else 16.0
+TEXT_SIZE = args.text_size
 
 # === Build the peg turner ===
 
@@ -223,7 +236,7 @@ if all_scallop_edges:
 
 # Recess text into the top face of the cap
 text_lines = TEXT_STRING.split("\n")
-line_spacing = TEXT_SIZE * 1.0
+line_spacing = TEXT_SIZE * LINE_SPACING_FACTOR
 total_text_height = (len(text_lines) - 1) * line_spacing
 text_solid = None
 for i, line in enumerate(text_lines):
@@ -240,14 +253,14 @@ for i, line in enumerate(text_lines):
     if ENGRAVE:
         # Use a V-taper so the groove is self-supporting when printed cap-down.
         # Start with 45° and reduce if the taper collapses thin strokes.
-        for taper_angle in (45, 30, 20, 10):
+        for taper_angle in ENGRAVE_TAPER_ANGLES:
             try:
                 line_solid = Pos(0, y_offset, cap_top) * extrude(
                     line_sketch, -TEXT_DEPTH, taper=taper_angle
                 )
                 break
             except (ValueError, Exception):
-                if taper_angle == 10:
+                if taper_angle == ENGRAVE_TAPER_ANGLES[-1]:
                     # Fall back to straight extrude
                     line_solid = Pos(0, y_offset, cap_top) * extrude(
                         line_sketch, -TEXT_DEPTH
@@ -290,12 +303,11 @@ if args.tpu_insert:
     insert_outer_width = SLOT_WIDTH - 2 * INSERT_TOLERANCE
     insert_outer_radius = min(insert_outer_length, insert_outer_width) / 2 - 0.01
 
-    # Inner cavity: 2mm wall on each side
+    # Inner cavity: INSERT_WALL on each side
     insert_inner_length = insert_outer_length - 2 * INSERT_WALL
     insert_inner_width = insert_outer_width - 2 * INSERT_WALL
     insert_inner_radius = min(insert_inner_length, insert_inner_width) / 2 - 0.01
 
-    INSERT_HEIGHT_INSET = 1.0  # mm shorter than slot so insert sits inside
     insert_height = PEG_HEAD_DEPTH - INSERT_HEIGHT_INSET
 
     # Outer shell (closed-top cup)
@@ -387,7 +399,7 @@ if ENGRAVE:
     model.SetUnit(Lib3MF.ModelUnit.MilliMeter)
     identity = wrapper.GetIdentityTransform()
 
-    def _add_mesh(shape, name, lin_def=0.001, ang_def=0.1):
+    def _add_mesh(shape, name, lin_def=MESH_LINEAR_DEFLECTION, ang_def=MESH_ANGULAR_DEFLECTION):
         """Tessellate a single Shape and add it as one mesh object."""
         verts, tris = Mesher._mesh_shape(
             copy_module.deepcopy(shape), lin_def, ang_def
@@ -439,7 +451,7 @@ else:
     model.SetUnit(Lib3MF.ModelUnit.MilliMeter)
     identity = wrapper.GetIdentityTransform()
 
-    def _add_mesh(shape, name, lin_def=0.001, ang_def=0.1):
+    def _add_mesh(shape, name, lin_def=MESH_LINEAR_DEFLECTION, ang_def=MESH_ANGULAR_DEFLECTION):
         """Tessellate a single Shape and add it as one mesh object."""
         verts, tris = Mesher._mesh_shape(
             copy_module.deepcopy(shape), lin_def, ang_def
@@ -459,7 +471,7 @@ else:
     vert_offset = 0
     for solid in inlay_flipped.solids():
         verts, tris = Mesher._mesh_shape(
-            copy_module.deepcopy(solid), 0.01, 0.5
+            copy_module.deepcopy(solid), INLAY_LINEAR_DEFLECTION, INLAY_ANGULAR_DEFLECTION
         )
         if len(verts) < 3 or not tris:
             continue

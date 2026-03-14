@@ -10,19 +10,15 @@ process = "0.20mm Standard @BBL X1C"
 curr_bed_type = "Textured PEI Plate"
 sparse_infill_density = "100%"
 sparse_infill_pattern = "rectilinear"
-
 [slicer.slots]
-1 = "Bambu PLA Basic @BBL X1C"
-4 = "Bambu PLA Basic @BBL X1C"
+3 = "Generic PETG-CF @base"
 
 [printer]
 mode = "cloud-bridge"
 serial = "01P00A451601106"
 
-[[parts]]
-file = "peg_turner_wi.3mf"
-copies = 1
-filament = 4
 
-[parts.filaments]
-inlay = 1
+[[parts]]
+file = "peg_turner_wi_body.step"
+copies = 1
+filament = 3
