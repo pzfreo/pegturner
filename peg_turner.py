@@ -11,12 +11,27 @@ Usage:
 
 import argparse
 import math
+import os
+import tempfile
+import urllib.request
 from build123d import *
 
 parser = argparse.ArgumentParser(description="Generate peg turner CAD model")
 parser.add_argument(
     "--no-tpu-insert", action="store_true",
     help="Use original slot dimensions without TPU insert",
+)
+parser.add_argument(
+    "--text", type=str, default=None,
+    help="Text to emboss (use \\n for line breaks)",
+)
+parser.add_argument(
+    "--font", type=str, default=None,
+    help="Font as URL to a .ttf file",
+)
+parser.add_argument(
+    "--text-size", type=float, default=None,
+    help="Font size in mm",
 )
 args = parser.parse_args()
 args.tpu_insert = not args.no_tpu_insert
@@ -72,10 +87,20 @@ SCALLOP_DEPTH = 4.0  # mm
 SCALLOP_FILLET = 2.0  # mm fillet on scallop edges (matches exterior fillet)
 
 # Text emboss (recessed into top face of cap)
-TEXT_STRING = "Chelli"
-TEXT_FONT = "MrsSaintDelafield-Regular.ttf"
+TEXT_STRING = args.text if args.text is not None else "Chelli"
+TEXT_STRING = TEXT_STRING.replace("\\n", "\n")
+
+if args.font is not None:
+    # Download font from URL to a temp file
+    _font_tmp = tempfile.NamedTemporaryFile(suffix=".ttf", delete=False)
+    urllib.request.urlretrieve(args.font, _font_tmp.name)
+    TEXT_FONT = _font_tmp.name
+    print(f"Downloaded font from {args.font}")
+else:
+    TEXT_FONT = "MrsSaintDelafield-Regular.ttf"
+
 TEXT_DEPTH = 0.2  # mm recess depth (single layer for AMS color swap)
-TEXT_SIZE = 16.0  # mm font size
+TEXT_SIZE = args.text_size if args.text_size is not None else 16.0
 
 # === Build the peg turner ===
 
@@ -182,15 +207,24 @@ all_scallop_edges = turner.edges().filter_by(
 if all_scallop_edges:
     turner = fillet(all_scallop_edges, SCALLOP_FILLET)
 
-# Recess "Chelli" into the top face of the cap
-text_sketch = Text(
-    TEXT_STRING,
-    font_size=TEXT_SIZE,
-    font_path=TEXT_FONT,
-    font_style=FontStyle.BOLD,
-    align=(Align.CENTER, Align.CENTER),
-)
-text_solid = Pos(0, 0, cap_top) * extrude(text_sketch, -TEXT_DEPTH)
+# Recess text into the top face of the cap
+text_lines = TEXT_STRING.split("\n")
+line_spacing = TEXT_SIZE * 1.3
+total_text_height = (len(text_lines) - 1) * line_spacing
+text_solid = None
+for i, line in enumerate(text_lines):
+    if not line.strip():
+        continue
+    y_offset = total_text_height / 2 - i * line_spacing
+    line_sketch = Text(
+        line,
+        font_size=TEXT_SIZE,
+        font_path=TEXT_FONT,
+        font_style=FontStyle.BOLD,
+        align=(Align.CENTER, Align.CENTER),
+    )
+    line_solid = Pos(0, y_offset, cap_top) * extrude(line_sketch, -TEXT_DEPTH)
+    text_solid = line_solid if text_solid is None else (text_solid + line_solid)
 turner = turner - text_solid
 
 # === Print dimensions ===
