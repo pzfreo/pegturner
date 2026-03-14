@@ -223,7 +223,7 @@ if all_scallop_edges:
 
 # Recess text into the top face of the cap
 text_lines = TEXT_STRING.split("\n")
-line_spacing = TEXT_SIZE * 1.3
+line_spacing = TEXT_SIZE * 1.0
 total_text_height = (len(text_lines) - 1) * line_spacing
 text_solid = None
 for i, line in enumerate(text_lines):
