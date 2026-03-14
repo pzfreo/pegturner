@@ -34,6 +34,10 @@ parser.add_argument(
     help="Font size in mm",
 )
 parser.add_argument(
+    "--inlay-depth", type=float, default=0.2,
+    help="Inlay recess depth in mm (default: 0.2, single layer)",
+)
+parser.add_argument(
     "--engrave", action="store_true",
     help="Engrave text instead of inlay (V-shaped groove, no supports needed)",
 )
@@ -109,7 +113,7 @@ else:
 
 ENGRAVE = args.engrave
 ENGRAVE_DEPTH = args.engrave_depth
-TEXT_DEPTH = ENGRAVE_DEPTH if ENGRAVE else 0.2  # engrave or single-layer inlay
+TEXT_DEPTH = ENGRAVE_DEPTH if ENGRAVE else args.inlay_depth
 TEXT_SIZE = args.text_size if args.text_size is not None else 16.0
 
 # === Build the peg turner ===
