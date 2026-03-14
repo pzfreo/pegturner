@@ -74,7 +74,7 @@ SCALLOP_FILLET = 2.0  # mm fillet on scallop edges (matches exterior fillet)
 # Text emboss (recessed into top face of cap)
 TEXT_STRING = "Chelli"
 TEXT_FONT = "MrsSaintDelafield-Regular.ttf"
-TEXT_DEPTH = 1.0  # mm recess depth
+TEXT_DEPTH = 0.2  # mm recess depth (single layer for AMS color swap)
 TEXT_SIZE = 16.0  # mm font size
 
 # === Build the peg turner ===
