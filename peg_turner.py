@@ -33,6 +33,18 @@ parser.add_argument(
     "--text-size", type=float, default=None,
     help="Font size in mm",
 )
+parser.add_argument(
+    "--inlay-depth", type=float, default=0.2,
+    help="Inlay recess depth in mm (default: 0.2, single layer)",
+)
+parser.add_argument(
+    "--engrave", action="store_true",
+    help="Engrave text instead of inlay (V-shaped groove, no supports needed)",
+)
+parser.add_argument(
+    "--engrave-depth", type=float, default=1.0,
+    help="Engrave depth in mm (default: 1.0)",
+)
 args = parser.parse_args()
 args.tpu_insert = not args.no_tpu_insert
 
@@ -99,7 +111,9 @@ if args.font is not None:
 else:
     TEXT_FONT = "MrsSaintDelafield-Regular.ttf"
 
-TEXT_DEPTH = 0.2  # mm recess depth (single layer for AMS color swap)
+ENGRAVE = args.engrave
+ENGRAVE_DEPTH = args.engrave_depth
+TEXT_DEPTH = ENGRAVE_DEPTH if ENGRAVE else args.inlay_depth
 TEXT_SIZE = args.text_size if args.text_size is not None else 16.0
 
 # === Build the peg turner ===
@@ -223,7 +237,24 @@ for i, line in enumerate(text_lines):
         font_style=FontStyle.BOLD,
         align=(Align.CENTER, Align.CENTER),
     )
-    line_solid = Pos(0, y_offset, cap_top) * extrude(line_sketch, -TEXT_DEPTH)
+    if ENGRAVE:
+        # Use a V-taper so the groove is self-supporting when printed cap-down.
+        # Start with 45° and reduce if the taper collapses thin strokes.
+        for taper_angle in (45, 30, 20, 10):
+            try:
+                line_solid = Pos(0, y_offset, cap_top) * extrude(
+                    line_sketch, -TEXT_DEPTH, taper=taper_angle
+                )
+                break
+            except (ValueError, Exception):
+                if taper_angle == 10:
+                    # Fall back to straight extrude
+                    line_solid = Pos(0, y_offset, cap_top) * extrude(
+                        line_sketch, -TEXT_DEPTH
+                    )
+                    print(f"  Warning: V-taper not possible for '{line}', using straight walls")
+    else:
+        line_solid = Pos(0, y_offset, cap_top) * extrude(line_sketch, -TEXT_DEPTH)
     text_solid = line_solid if text_solid is None else (text_solid + line_solid)
 turner = turner - text_solid
 
@@ -339,85 +370,118 @@ if insert is not None:
 flip = Pos(0, 0, TOTAL_HEIGHT) * Rot(180, 0, 0)
 turner_flipped = flip * turner
 
-inlay_flipped = flip * text_solid
-
-# Interference check: inlay must not overlap with body
-inlay_interference = turner_flipped & inlay_flipped
-try:
-    inlay_interference_vol = inlay_interference.volume
-except Exception:
-    inlay_interference_vol = 0.0
-if inlay_interference_vol > 0.01:
-    print(f"\n*** INLAY INTERFERENCE DETECTED ***")
-    print(f"  Overlap volume: {inlay_interference_vol:.2f} mm³")
-    raise ValueError(
-        f"Text inlay interferes with body by {inlay_interference_vol:.2f} mm³"
-    )
-else:
-    print(f"\n  Inlay interference check: PASS (no overlap)")
-
-suffix = "_wi" if args.tpu_insert else ""
-export_step(turner_flipped, f"peg_turner{suffix}_body.step")
-export_step(inlay_flipped, f"peg_turner{suffix}_inlay.step")
-print(f"Exported STEP file: peg_turner{suffix}_body.step")
-print(f"Exported STEP file: peg_turner{suffix}_inlay.step")
-
-# Export 3MF with exactly two parts: inlay + body
 import copy as copy_module
 from build123d.mesher import Lib3MF
 
-MF_FILE = f"peg_turner{suffix}.3mf"
-libpath = __import__("os").path.dirname(Lib3MF.__file__)
-wrapper = Lib3MF.Wrapper(__import__("os").path.join(libpath, "lib3mf"))
-model = wrapper.CreateModel()
-model.SetUnit(Lib3MF.ModelUnit.MilliMeter)
-identity = wrapper.GetIdentityTransform()
+suffix = "_wi" if args.tpu_insert else ""
 
+if ENGRAVE:
+    # Engrave mode: single-object 3MF (no inlay)
+    export_step(turner_flipped, f"peg_turner{suffix}_body.step")
+    print(f"Exported STEP file: peg_turner{suffix}_body.step")
 
-def _add_mesh(shape, name, lin_def=0.001, ang_def=0.1):
-    """Tessellate a single Shape and add it as one mesh object."""
-    verts, tris = Mesher._mesh_shape(
-        copy_module.deepcopy(shape), lin_def, ang_def
-    )
-    if len(verts) < 3 or not tris:
-        return None
-    v3mf, t3mf = Mesher._create_3mf_mesh(verts, tris)
-    mesh = model.AddMeshObject()
-    mesh.SetGeometry(v3mf, t3mf)
-    mesh.SetType(Lib3MF.ObjectType.Model)
-    mesh.SetName(name)
-    return mesh
+    MF_FILE = f"peg_turner{suffix}.3mf"
+    libpath = __import__("os").path.dirname(Lib3MF.__file__)
+    wrapper = Lib3MF.Wrapper(__import__("os").path.join(libpath, "lib3mf"))
+    model = wrapper.CreateModel()
+    model.SetUnit(Lib3MF.ModelUnit.MilliMeter)
+    identity = wrapper.GetIdentityTransform()
 
+    def _add_mesh(shape, name, lin_def=0.001, ang_def=0.1):
+        """Tessellate a single Shape and add it as one mesh object."""
+        verts, tris = Mesher._mesh_shape(
+            copy_module.deepcopy(shape), lin_def, ang_def
+        )
+        if len(verts) < 3 or not tris:
+            return None
+        v3mf, t3mf = Mesher._create_3mf_mesh(verts, tris)
+        mesh = model.AddMeshObject()
+        mesh.SetGeometry(v3mf, t3mf)
+        mesh.SetType(Lib3MF.ObjectType.Model)
+        mesh.SetName(name)
+        return mesh
 
-# Tessellate all inlay solids and merge into a single mesh
-all_verts = []
-all_tris = []
-vert_offset = 0
-for solid in inlay_flipped.solids():
-    verts, tris = Mesher._mesh_shape(
-        copy_module.deepcopy(solid), 0.01, 0.5
-    )
-    if len(verts) < 3 or not tris:
-        continue
-    all_verts.extend(verts)
-    all_tris.extend((a + vert_offset, b + vert_offset, c + vert_offset)
-                     for a, b, c in tris)
-    vert_offset += len(verts)
+    body_mesh = _add_mesh(turner_flipped.solids()[0], "body")
+    model.AddBuildItem(body_mesh, identity)
 
-v3mf, t3mf = Mesher._create_3mf_mesh(all_verts, all_tris)
-inlay_mesh = model.AddMeshObject()
-inlay_mesh.SetGeometry(v3mf, t3mf)
-inlay_mesh.SetType(Lib3MF.ObjectType.Model)
-inlay_mesh.SetName("inlay")
-model.AddBuildItem(inlay_mesh, identity)
+    writer = model.QueryWriter("3mf")
+    writer.WriteToFile(MF_FILE)
+    print(f"Exported 3MF file: {MF_FILE}")
 
-# Tessellate body as a single mesh
-body_mesh = _add_mesh(turner_flipped.solids()[0], "body")
-model.AddBuildItem(body_mesh, identity)
+else:
+    # Inlay mode: two-object 3MF (inlay + body)
+    inlay_flipped = flip * text_solid
 
-writer = model.QueryWriter("3mf")
-writer.WriteToFile(MF_FILE)
-print(f"Exported 3MF file: {MF_FILE}")
+    # Interference check: inlay must not overlap with body
+    inlay_interference = turner_flipped & inlay_flipped
+    try:
+        inlay_interference_vol = inlay_interference.volume
+    except Exception:
+        inlay_interference_vol = 0.0
+    if inlay_interference_vol > 0.01:
+        print(f"\n*** INLAY INTERFERENCE DETECTED ***")
+        print(f"  Overlap volume: {inlay_interference_vol:.2f} mm³")
+        raise ValueError(
+            f"Text inlay interferes with body by {inlay_interference_vol:.2f} mm³"
+        )
+    else:
+        print(f"\n  Inlay interference check: PASS (no overlap)")
+
+    export_step(turner_flipped, f"peg_turner{suffix}_body.step")
+    export_step(inlay_flipped, f"peg_turner{suffix}_inlay.step")
+    print(f"Exported STEP file: peg_turner{suffix}_body.step")
+    print(f"Exported STEP file: peg_turner{suffix}_inlay.step")
+
+    MF_FILE = f"peg_turner{suffix}.3mf"
+    libpath = __import__("os").path.dirname(Lib3MF.__file__)
+    wrapper = Lib3MF.Wrapper(__import__("os").path.join(libpath, "lib3mf"))
+    model = wrapper.CreateModel()
+    model.SetUnit(Lib3MF.ModelUnit.MilliMeter)
+    identity = wrapper.GetIdentityTransform()
+
+    def _add_mesh(shape, name, lin_def=0.001, ang_def=0.1):
+        """Tessellate a single Shape and add it as one mesh object."""
+        verts, tris = Mesher._mesh_shape(
+            copy_module.deepcopy(shape), lin_def, ang_def
+        )
+        if len(verts) < 3 or not tris:
+            return None
+        v3mf, t3mf = Mesher._create_3mf_mesh(verts, tris)
+        mesh = model.AddMeshObject()
+        mesh.SetGeometry(v3mf, t3mf)
+        mesh.SetType(Lib3MF.ObjectType.Model)
+        mesh.SetName(name)
+        return mesh
+
+    # Tessellate all inlay solids and merge into a single mesh
+    all_verts = []
+    all_tris = []
+    vert_offset = 0
+    for solid in inlay_flipped.solids():
+        verts, tris = Mesher._mesh_shape(
+            copy_module.deepcopy(solid), 0.01, 0.5
+        )
+        if len(verts) < 3 or not tris:
+            continue
+        all_verts.extend(verts)
+        all_tris.extend((a + vert_offset, b + vert_offset, c + vert_offset)
+                         for a, b, c in tris)
+        vert_offset += len(verts)
+
+    v3mf, t3mf = Mesher._create_3mf_mesh(all_verts, all_tris)
+    inlay_mesh = model.AddMeshObject()
+    inlay_mesh.SetGeometry(v3mf, t3mf)
+    inlay_mesh.SetType(Lib3MF.ObjectType.Model)
+    inlay_mesh.SetName("inlay")
+    model.AddBuildItem(inlay_mesh, identity)
+
+    # Tessellate body as a single mesh
+    body_mesh = _add_mesh(turner_flipped.solids()[0], "body")
+    model.AddBuildItem(body_mesh, identity)
+
+    writer = model.QueryWriter("3mf")
+    writer.WriteToFile(MF_FILE)
+    print(f"Exported 3MF file: {MF_FILE}")
 
 # Show in OCP CAD Viewer if active
 try:
