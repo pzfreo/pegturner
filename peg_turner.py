@@ -517,7 +517,7 @@ try:
         colors.append("gold")
         alphas.append(1.0)
     for label, ins in inserts.items():
-        parts.append(ins)
+        parts.append(flip * ins)
         names.append(f"insert_{label}")
         colors.append("orange")
         alphas.append(1.0)
