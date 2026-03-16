@@ -1,6 +1,6 @@
 [plate]
 size = [256, 256]
-padding = 5.0
+padding = 5.1
 
 [slicer]
 engine = "orca"
