@@ -1,3 +1,10 @@
+[pipeline]
+stages = ["load", "arrange", "plate", "slice", "print"]
+
+[printer]
+mode = "cloud-bridge"
+name = "workshop"
+
 [plate]
 size = [256, 256]
 padding = 5.1
@@ -8,17 +15,11 @@ printer = "Bambu Lab P1S 0.4 nozzle"
 process = "0.20mm Standard @BBL X1C"
 [slicer.overrides]
 curr_bed_type = "Textured PEI Plate"
-sparse_infill_density = "100%"
-sparse_infill_pattern = "rectilinear"
-brim_type = "outer_only"
-brim_width = "5"
-
-[printer]
-mode = "cloud-bridge"
-serial = "01P00A451601106"
-
+sparse_infill_density = "50%"
+sparse_infill_pattern = "gyroid"
+wall_loops = "4"
 
 [[parts]]
-file = "peg_turner.3mf"
+file = "peg_turner_body.step"
 copies = 1
 filament = "Generic PETG-CF @base"
