@@ -1,4 +1,4 @@
-name: Build
+name: Build and Slice
 
 on:
   push:
@@ -26,3 +26,39 @@ jobs:
         with:
           name: step-files
           path: "*.step"
+
+  slice-body:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download STEP files
+        uses: actions/download-artifact@v4
+        with:
+          name: step-files
+
+      - name: Slice body
+        uses: pzfreo/fabprint/action@main
+        with:
+          config: fabprint-wi.toml
+
+  slice-inserts:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download STEP files
+        uses: actions/download-artifact@v4
+        with:
+          name: step-files
+
+      - name: Slice inserts
+        uses: pzfreo/fabprint/action@main
+        with:
+          config: fabprint-inserts.toml
