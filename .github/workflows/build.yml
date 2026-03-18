@@ -21,9 +21,6 @@ jobs:
       - name: Generate CAD models
         run: python peg_turner.py
 
-      - name: Generate CAD models (no insert)
-        run: python peg_turner.py --no-tpu-insert
-
       - name: Upload STEP files
         uses: actions/upload-artifact@v4
         with:
