@@ -109,11 +109,6 @@ LINE_SPACING_FACTOR = 1.0  # multiplier for font size to get line spacing
 # V-taper angles to try (steepest first, falls back to straight walls)
 ENGRAVE_TAPER_ANGLES = (45, 30, 20, 10)
 
-# Mesh tessellation
-MESH_LINEAR_DEFLECTION = 0.001  # mm (default mesh resolution)
-MESH_ANGULAR_DEFLECTION = 0.1  # radians
-INLAY_LINEAR_DEFLECTION = 0.01  # mm (coarser for text inlay)
-INLAY_ANGULAR_DEFLECTION = 0.5  # radians
 
 # Text emboss (recessed into top face of cap)
 TEXT_STRING = args.text
@@ -387,50 +382,15 @@ for label, insert in inserts.items():
     export_step(insert, fname)
     print(f"Exported STEP file: {fname}")
 
-# Export 3MF with text inlay + body (print-ready orientation, cap down)
+# Export print-ready STEP files (flipped, cap down)
 flip = Pos(0, 0, TOTAL_HEIGHT) * Rot(180, 0, 0)
 turner_flipped = flip * turner
 
-import copy as copy_module
-from build123d.mesher import Lib3MF
-
 suffix = "_wi" if args.tpu_insert else ""
+export_step(turner_flipped, f"peg_turner{suffix}_body.step")
+print(f"Exported STEP file: peg_turner{suffix}_body.step")
 
-if ENGRAVE:
-    # Engrave mode: single-object 3MF (no inlay)
-    export_step(turner_flipped, f"peg_turner{suffix}_body.step")
-    print(f"Exported STEP file: peg_turner{suffix}_body.step")
-
-    MF_FILE = f"peg_turner{suffix}.3mf"
-    libpath = __import__("os").path.dirname(Lib3MF.__file__)
-    wrapper = Lib3MF.Wrapper(__import__("os").path.join(libpath, "lib3mf"))
-    model = wrapper.CreateModel()
-    model.SetUnit(Lib3MF.ModelUnit.MilliMeter)
-    identity = wrapper.GetIdentityTransform()
-
-    def _add_mesh(shape, name, lin_def=MESH_LINEAR_DEFLECTION, ang_def=MESH_ANGULAR_DEFLECTION):
-        """Tessellate a single Shape and add it as one mesh object."""
-        verts, tris = Mesher._mesh_shape(
-            copy_module.deepcopy(shape), lin_def, ang_def
-        )
-        if len(verts) < 3 or not tris:
-            return None
-        v3mf, t3mf = Mesher._create_3mf_mesh(verts, tris)
-        mesh = model.AddMeshObject()
-        mesh.SetGeometry(v3mf, t3mf)
-        mesh.SetType(Lib3MF.ObjectType.Model)
-        mesh.SetName(name)
-        return mesh
-
-    body_mesh = _add_mesh(turner_flipped.solids()[0], "body")
-    model.AddBuildItem(body_mesh, identity)
-
-    writer = model.QueryWriter("3mf")
-    writer.WriteToFile(MF_FILE)
-    print(f"Exported 3MF file: {MF_FILE}")
-
-else:
-    # Inlay mode: two-object 3MF (inlay + body)
+if not ENGRAVE:
     inlay_flipped = flip * text_solid
 
     # Interference check: inlay must not overlap with body
@@ -448,61 +408,8 @@ else:
     else:
         print(f"\n  Inlay interference check: PASS (no overlap)")
 
-    export_step(turner_flipped, f"peg_turner{suffix}_body.step")
     export_step(inlay_flipped, f"peg_turner{suffix}_inlay.step")
-    print(f"Exported STEP file: peg_turner{suffix}_body.step")
     print(f"Exported STEP file: peg_turner{suffix}_inlay.step")
-
-    MF_FILE = f"peg_turner{suffix}.3mf"
-    libpath = __import__("os").path.dirname(Lib3MF.__file__)
-    wrapper = Lib3MF.Wrapper(__import__("os").path.join(libpath, "lib3mf"))
-    model = wrapper.CreateModel()
-    model.SetUnit(Lib3MF.ModelUnit.MilliMeter)
-    identity = wrapper.GetIdentityTransform()
-
-    def _add_mesh(shape, name, lin_def=MESH_LINEAR_DEFLECTION, ang_def=MESH_ANGULAR_DEFLECTION):
-        """Tessellate a single Shape and add it as one mesh object."""
-        verts, tris = Mesher._mesh_shape(
-            copy_module.deepcopy(shape), lin_def, ang_def
-        )
-        if len(verts) < 3 or not tris:
-            return None
-        v3mf, t3mf = Mesher._create_3mf_mesh(verts, tris)
-        mesh = model.AddMeshObject()
-        mesh.SetGeometry(v3mf, t3mf)
-        mesh.SetType(Lib3MF.ObjectType.Model)
-        mesh.SetName(name)
-        return mesh
-
-    # Tessellate all inlay solids and merge into a single mesh
-    all_verts = []
-    all_tris = []
-    vert_offset = 0
-    for solid in inlay_flipped.solids():
-        verts, tris = Mesher._mesh_shape(
-            copy_module.deepcopy(solid), INLAY_LINEAR_DEFLECTION, INLAY_ANGULAR_DEFLECTION
-        )
-        if len(verts) < 3 or not tris:
-            continue
-        all_verts.extend(verts)
-        all_tris.extend((a + vert_offset, b + vert_offset, c + vert_offset)
-                         for a, b, c in tris)
-        vert_offset += len(verts)
-
-    v3mf, t3mf = Mesher._create_3mf_mesh(all_verts, all_tris)
-    inlay_mesh = model.AddMeshObject()
-    inlay_mesh.SetGeometry(v3mf, t3mf)
-    inlay_mesh.SetType(Lib3MF.ObjectType.Model)
-    inlay_mesh.SetName("inlay")
-    model.AddBuildItem(inlay_mesh, identity)
-
-    # Tessellate body as a single mesh
-    body_mesh = _add_mesh(turner_flipped.solids()[0], "body")
-    model.AddBuildItem(body_mesh, identity)
-
-    writer = model.QueryWriter("3mf")
-    writer.WriteToFile(MF_FILE)
-    print(f"Exported 3MF file: {MF_FILE}")
 
 # Show in OCP CAD Viewer if active
 try:
