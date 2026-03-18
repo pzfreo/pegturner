@@ -1,2 +1,15 @@
+# Generated CAD artifacts
+*.step
 *.3mf
+*.gcode
+
+# Slicer output
+output/
+
+# macOS
 .DS_Store
+
+# Misc
+debug.txt
+profiles.list
+*.png

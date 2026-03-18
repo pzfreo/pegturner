@@ -2,7 +2,6 @@
 stages = ["load", "arrange", "plate", "slice", "print"]
 
 [printer]
-mode = "cloud-bridge"
 name = "workshop"
 
 [plate]

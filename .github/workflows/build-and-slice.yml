@@ -1,0 +1,39 @@
+name: Build and Slice
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install build123d
+        run: pip install build123d
+
+      - name: Generate CAD models
+        run: python peg_turner.py
+
+      - name: Generate CAD models (no insert)
+        run: python peg_turner.py --no-tpu-insert
+
+      - name: Slice (with insert body)
+        uses: pzfreo/fabprint/action@main
+        with:
+          config: fabprint-wi.toml
+          output-dir: output/wi
+
+      - name: Slice (inserts)
+        uses: pzfreo/fabprint/action@main
+        with:
+          config: fabprint-inserts.toml
+          output-dir: output/inserts
