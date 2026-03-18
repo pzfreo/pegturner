@@ -1,4 +1,4 @@
-name: Build and Slice
+name: Build
 
 on:
   push:
@@ -8,8 +8,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    permissions:
-      pull-requests: write
     steps:
       - uses: actions/checkout@v4
 
@@ -26,14 +24,8 @@ jobs:
       - name: Generate CAD models (no insert)
         run: python peg_turner.py --no-tpu-insert
 
-      - name: Slice (with insert body)
-        uses: pzfreo/fabprint/action@main
+      - name: Upload STEP files
+        uses: actions/upload-artifact@v4
         with:
-          config: fabprint-wi.toml
-          output-dir: output/wi
-
-      - name: Slice (inserts)
-        uses: pzfreo/fabprint/action@main
-        with:
-          config: fabprint-inserts.toml
-          output-dir: output/inserts
+          name: step-files
+          path: "*.step"

@@ -1,0 +1,36 @@
+name: Slice
+
+on:
+  workflow_run:
+    workflows: [Build]
+    types: [completed]
+
+jobs:
+  slice:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    permissions:
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Download STEP files
+        uses: actions/download-artifact@v4
+        with:
+          name: step-files
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Slice (with insert body)
+        uses: pzfreo/fabprint/action@main
+        with:
+          config: fabprint-wi.toml
+          output-dir: output/wi
+
+      - name: Slice (inserts)
+        uses: pzfreo/fabprint/action@main
+        with:
+          config: fabprint-inserts.toml
+          output-dir: output/inserts
