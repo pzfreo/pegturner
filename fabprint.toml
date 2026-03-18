@@ -1,3 +1,5 @@
+name = "peg-turner"
+
 [pipeline]
 stages = ["load", "arrange", "plate", "slice", "print"]
 
