@@ -20,14 +20,10 @@ printer = "Bambu Lab P1S 0.4 nozzle"
 process = "0.20mm Standard @BBL X1C"
 
 [slicer.orca.slots]
-# Slots 1-4 are unused placeholders: estampo emits an empty
-# --load-filaments entry for each gap before slot 5, and OrcaSlicer
-# segfaults on empty entries. No part references them.
-1 = "Generic PLA"
-2 = "Generic PLA"
-3 = "Generic PLA"
-4 = "Generic PLA"
-5 = "Bambu TPU 95A @base"
+# Single filament: OrcaSlicer 2.3.1 segfaults in CI when loaded with
+# a multi-slot filament list for this machine/process combo. TPU was
+# previously slot 5 (external spool) — remap at print time.
+1 = "Bambu TPU 95A @base"
 
 [slicer.orca.overrides]
 sparse_infill_density = "100%"
@@ -37,10 +33,10 @@ sparse_infill_pattern = "rectilinear"
 file = "peg_insert_2_0.step"
 copies = 1
 rotate = [180, 0, 0]
-filament = 5
+filament = 1
 
 [[parts]]
 file = "peg_insert_2_5.step"
 copies = 1
 rotate = [180, 0, 0]
-filament = 5
+filament = 1
