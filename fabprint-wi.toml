@@ -1,7 +1,7 @@
 name = "peg-turner-body"
 
 [pipeline]
-stages = ["load", "arrange", "plate", "slice", "print"]
+stages = ["load", "arrange", "plate", "slice"]
 
 [printer]
 name = "workshop"
